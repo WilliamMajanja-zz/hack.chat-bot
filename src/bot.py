@@ -7,6 +7,7 @@ import re
 import hackchat
 
 from commands import info, youtube
+from commands.poem_web_scraper import get_poem
 
 
 random.seed(datetime.datetime.now())
@@ -36,6 +37,25 @@ def message_got(chat, message, sender):
                         break
             else:
                 reply = "e.g. {}yt star wars trailer".format(trigger)
+            chat.send_message(reply)
+        elif cmd == "poem" or cmd == "poet":
+            if search:
+                data = get_poem.get_poem(search, True if cmd == "poem" else False, site = True)
+                if data == None:
+                    reply = "Sorry, I couldn't find a poem for that."
+                else:
+                    poem = data[0].split("\n")
+                    lines = 0
+                    reply = ""
+                    for line in poem:
+                        reply += line + "\n"
+                        lines += 1
+                        if lines == 6:
+                            reply += "hack.chat won't let me post more but you can read the rest at:\n" + data[1]
+                            break
+            else:
+                reply = "e.g. " + trigger
+                reply += "poem daffodils" if cmd == "poem" else "poet shakespeare"
             chat.send_message(reply)
 
 
