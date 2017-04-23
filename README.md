@@ -8,6 +8,8 @@ You can check out this general use bot by going to [hack.chat/?programming](http
 
 - [Python 3 or higher](https://www.python.org/downloads/)
 - hackchat `pip install hackchat`
+- BeautifulSoup 4 `pip install bs4`
+- requests `pip install requests`
 
 ## Building
 
