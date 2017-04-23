@@ -1,0 +1,3 @@
+[submodule "poem_web_scraper"]
+	path = poem_web_scraper
+	url = https://gist.github.com/neelkamath/492f3ff57a6dae8507c56deaf418f705
