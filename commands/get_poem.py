@@ -8,11 +8,11 @@ import bs4
 import requests
 
 
-def get_poem(name, poet = False):
+def get_poem(name, isPoet):
     """Returns a tuple with its first element as a poem and its second element as a link to its webpage.
     Keyword arguments:
     name -- the poem's or poet's name (either in part or in full)
-    poet -- set to <True> if <name> is the name of a poet or <False> if <name> is the name of a poem
+    isPoet -- set to <True> if <name> is the name of a poet or <False> if <name> is the name of a poem
     <None> will be returned if no poem was found.
     """
 
@@ -21,14 +21,24 @@ def get_poem(name, poet = False):
     query = " ".join(name.split())
     query = query.replace(" ", "+").lower()
     soup = bs4.BeautifulSoup(requests.get(url + "search/?q=" + query).text, "html.parser")
-    if poet:
+    if isPoet:
         found = False
-        for link in soup.find_all("a"):
-            address = str(link.get("href"))
-            data = re.sub("/", "", address)
+        for item in soup.find_all("li"):
+            item = str(item)
+            poetStart = re.search("\"", item).end()
+            poetEnd = poetStart + re.search("\"", item[poetStart:]).start()
+            poet = item[poetStart:poetEnd]
+            data = re.sub("/", "", poet)
             data = re.sub("-", " ", data)
-            if name in data and re.search(r"\s", data):
-                soup = bs4.BeautifulSoup(requests.get(url + address + "poems/").text, "html.parser")
+            poemsStart = re.search("<strong>", item)
+            if poemsStart:
+                poemsStart = poemsStart.end()
+            else:
+                continue
+            poemsEnd = re.search("</strong>", item).start()
+            poems = int(item[poemsStart:poemsEnd])
+            if name in data and re.search(r"\s", data) and poems > 0:
+                soup = bs4.BeautifulSoup(requests.get(url + poet + "poems/").text, "html.parser")
                 found = True
                 break
         if not found:

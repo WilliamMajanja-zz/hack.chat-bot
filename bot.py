@@ -24,7 +24,7 @@ def message_got(chat, message, sender):
         valid = True
         if cmd == "poem" or cmd == "poet":
             if arg:
-                data = get_poem.get_poem(arg, True if cmd == "poem" else False)
+                data = get_poem.get_poem(arg, True if cmd == "poet" else False)
                 if data == None:
                     reply = "Sorry, I couldn't find a poem for that."
                 else:
