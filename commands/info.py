@@ -3,7 +3,7 @@
 
 def commands(trigger):
     """Returns a string explaining how to use the bot. <trigger> is the string that triggers the bots activities."""
-    commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss"))
+    commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote"))
     msg = ""
     for cmd in commands:
         msg += " " + trigger + cmd

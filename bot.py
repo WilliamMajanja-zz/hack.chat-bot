@@ -6,7 +6,7 @@ import re
 
 import hackchat
 
-from commands import get_poem, info, youtube
+from commands import get_poem, quotes, info, youtube
 
 
 random.seed(datetime.datetime.now())
@@ -21,12 +21,13 @@ def message_got(chat, message, sender):
     if msg[:1] == trigger:
         cmd = msg[1:space.start()] if space else msg[1:]
         arg = msg[space.end():] if space else False
+        notFound = "Sorry, I couldn't find any {} for that."
         valid = True
         if cmd == "poem" or cmd == "poet":
             if arg:
                 data = get_poem.get_poem(arg, True if cmd == "poet" else False)
                 if data == None:
-                    reply = "Sorry, I couldn't find a poem for that."
+                    reply = notFound.format("poems")
                 else:
                     poem = data[0].split("\n")
                     lines = 0
@@ -39,6 +40,15 @@ def message_got(chat, message, sender):
                             break
             else:
                 reply = "e.g. " + trigger + ("poem daffodils" if cmd == "poem" else "poet shakespeare")
+        elif cmd == "quote":
+            if arg:
+                data = quotes.quotes(arg)
+                if data:
+                    reply = data[random.randint(0, len(data) - 1)]
+                else:
+                    reply = notFound.format("quotes")
+            else:
+                reply = "e.g. {}quote buddha".format(trigger)
         elif cmd == "h" or cmd == "help":
             reply = info.commands(trigger)
         elif cmd == "about":
@@ -55,7 +65,7 @@ def message_got(chat, message, sender):
                         if count == 3:
                             break
                 else:
-                    reply = "Sorry, I couldn't find any videos for that."
+                    reply = notFound.format("videos")
             else:
                 reply = "e.g. {}yt star wars trailer".format(trigger)
         elif cmd == "toss":
