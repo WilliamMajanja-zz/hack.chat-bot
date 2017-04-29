@@ -6,11 +6,12 @@ import re
 
 import hackchat
 
-from commands import get_poem, quotes, info, youtube
+import settings
+from commands import get_poem, quotes, youtube
 
 
 random.seed(datetime.datetime.now())
-chat = hackchat.HackChat("neelkamath_bot", "programming")
+chat = hackchat.HackChat(settings.name + "#" + settings.tripcode, settings.channel)
 
 
 def message_got(chat, message, sender):
@@ -50,9 +51,16 @@ def message_got(chat, message, sender):
             else:
                 reply = "e.g. {}quote buddha".format(trigger)
         elif cmd == "h" or cmd == "help":
-            reply = info.commands(trigger)
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote"))
+            reply = ""
+            for cmd in commands:
+                reply += " " + trigger + cmd
+            reply =  reply[1:]
         elif cmd == "about":
-            reply = info.about
+            reply = ("Creator: Neel Kamath https://github.com/neelkamath\n" +
+                     "Code: https://github.com/neelkamath/hack.chat-bot\n" +
+                     "Language: Python\n" +
+                     "Website: https://neelkamath.github.io\n")
         elif cmd == "yt":
             if arg:
                 count = 0
@@ -67,7 +75,7 @@ def message_got(chat, message, sender):
                 else:
                     reply = notFound.format("videos")
             else:
-                reply = "e.g. {}yt star wars trailer".format(trigger)
+                reply = "searches YouTube e.g. {}yt star wars trailer".format(trigger)
         elif cmd == "toss":
             reply = "heads" if random.randint(0, 1) == 1 else "tails"
         else:

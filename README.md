@@ -1,6 +1,6 @@
 # About
 
-You can check out this general use bot by going to [hack.chat/?programming](https://hack.chat/?programming).
+You can check out this general use bot by going to [hack.chat/?programming](?programming).
 
 # Building the code
 
@@ -13,9 +13,20 @@ You can check out this general use bot by going to [hack.chat/?programming](http
 
 ## Building
 
-- Clone the repository `git clone https://github.com/neelkamath/hack.chat-bot`
-- Edit `bot.py` to your liking.
-- Change the directory `cd hack.chat-bot`
-- Run the script by entering one of the following on the command line.
-  - Windows: `python bot.py`
-  - Linux: `python3 bot.py`
+1. Clone the repository `git clone https://github.com/neelkamath/hack.chat-bot`
+1. Create a file named `settings.py` in the root directory and paste the following code into it.
+    ```python
+    #!/usr/bin/env python3
+
+
+    name = ""
+    tripcode = ""
+    channel = ""
+    ```
+    Enter the name of the bot in <name> (e.g. "myBot").
+    Optionally, enter the bots [tripcode](https://en.wikipedia.org/wiki/Imageboard#Tripcodes) in <tripcode> (e.g. "py").
+    Enter the channel to connect to in <channel> (e.g. "coding").
+1. Change the directory `cd hack.chat-bot`
+1. Run the script by entering one of the following on the command line.
+    - Windows: `python bot.py`
+    - Linux: `python3 bot.py`
