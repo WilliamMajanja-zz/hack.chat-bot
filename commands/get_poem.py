@@ -10,9 +10,11 @@ import requests
 
 def get_poem(name, isPoet):
     """Returns a tuple with its first element as a poem and its second element as a link to its webpage.
+
     Keyword arguments:
     name -- the poem's or poet's name (either in part or in full)
     isPoet -- set to <True> if <name> is the name of a poet or <False> if <name> is the name of a poem
+
     <None> will be returned if no poem was found.
     """
 

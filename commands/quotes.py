@@ -5,7 +5,7 @@ import requests
 
 
 def quotes(person):
-    """Returns a list of quotes from <person> or <None> if no quotes were found."""
+    """This returns a list of quotes from <person>."""
     query = person.replace(" ", "+")
     soup = bs4.BeautifulSoup(requests.get("https://brainyquote.com/search_results.html?q=" + query).text, "html.parser")
     quotes = []
