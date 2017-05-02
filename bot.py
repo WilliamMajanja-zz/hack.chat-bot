@@ -7,7 +7,7 @@ import re
 import hackchat
 
 import settings
-from commands import get_poem, quotes, youtube
+from commands import get_poem, katex, quotes, youtube
 
 
 random.seed(datetime.datetime.now())
@@ -17,6 +17,7 @@ chat = hackchat.HackChat(settings.name + "#" + settings.tripcode, settings.chann
 def message_got(chat, message, sender):
     """Checks messages on https://hack.chat and responds to ones triggering the bot."""
     trigger = "."
+    msg = " ".join(message.split())
     msg = message.strip().lower()
     space = re.search(r"\s", msg)
     if msg[:1] == trigger:
@@ -40,7 +41,33 @@ def message_got(chat, message, sender):
                             reply += data[1]
                             break
             else:
-                reply = "e.g. " + trigger + ("poem daffodils" if cmd == "poem" else "poet shakespeare")
+                if cmd == "poem":
+                    reply = "finds a poem by its name (e.g., {}poem daffodils)".format(trigger)
+                else:
+                    reply = "finds a poem from a poet (e.g., {}poet shakespeare)".format(trigger)
+        elif cmd[:5] == "katex":
+            if arg:
+                if "?" in arg or "{" in arg or "}" in arg:
+                    reply = "katex doesn't support \"?\", \"{\" and \"}\""
+                else:
+                    colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
+                    for color in colors:
+                        if color in cmd:
+                            break
+                        else:
+                            color = ""
+                    sizes = ["small", "large"]
+                    for size in sizes:
+                        if size in cmd:
+                            break
+                        else:
+                            size = ""
+                    reply = "says " + katex.katex_generator(arg, size, color)
+            else:
+                reply = ("stylizes text (e.g., {}katex.rainbow.large hello world)\n".format(trigger) +
+                         "optional colors: \"red\", \"orange\", \"green\", \"blue\", \"pink\", \"purple\", \"gray\", " +
+                         "\"rainbow\"\n" +
+                         "optional sizes: \"small\", \"large\"")
         elif cmd == "quote":
             if arg:
                 data = quotes.quotes(arg)
@@ -49,13 +76,14 @@ def message_got(chat, message, sender):
                 else:
                     reply = notFound.format("quotes")
             else:
-                reply = "e.g. {}quote buddha".format(trigger)
+                reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
         elif cmd == "h" or cmd == "help":
-            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote"))
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote",
+                               "katex<optional_color><optional_size>"))
             reply = ""
             for cmd in commands:
                 reply += " " + trigger + cmd
-            reply =  reply[1:]
+            reply = reply[1:]
         elif cmd == "about":
             reply = ("Creator: Neel Kamath https://github.com/neelkamath\n" +
                      "Code: https://github.com/neelkamath/hack.chat-bot\n" +
@@ -75,7 +103,7 @@ def message_got(chat, message, sender):
                 else:
                     reply = notFound.format("videos")
             else:
-                reply = "searches YouTube e.g. {}yt star wars trailer".format(trigger)
+                reply = "searches YouTube (e.g., {}yt star wars trailer)".format(trigger)
         elif cmd == "toss":
             reply = "heads" if random.randint(0, 1) == 1 else "tails"
         else:
