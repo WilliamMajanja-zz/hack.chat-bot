@@ -48,7 +48,7 @@ def message_got(chat, message, sender):
         elif cmd[:5] == "katex":
             if arg:
                 if "?" in arg or "{" in arg or "}" in arg:
-                    reply = "katex doesn't support \"?\", \"{\" and \"}\""
+                    reply = "KaTeX doesn't support \"?\", \"{\" and \"}\""
                 else:
                     colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
                     for color in colors:
@@ -67,7 +67,8 @@ def message_got(chat, message, sender):
                 reply = ("stylizes text (e.g., {}katex.rainbow.large hello world)\n".format(trigger) +
                          "optional colors: \"red\", \"orange\", \"green\", \"blue\", \"pink\", \"purple\", \"gray\", " +
                          "\"rainbow\"\n" +
-                         "optional sizes: \"small\", \"large\"")
+                         "optional sizes: \"tiny\", \"scriptsize\", \"footnotesize\", \"small\", \"normalsize\", " +
+                         "\"large\", \"Large\", \"LARGE\", \"huge\", \"Huge\"")
         elif cmd == "quote":
             if arg:
                 data = quotes.quotes(arg)

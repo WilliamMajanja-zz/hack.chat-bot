@@ -10,7 +10,6 @@ def quotes(person):
     soup = bs4.BeautifulSoup(requests.get("https://brainyquote.com/search_results.html?q=" + query).text, "html.parser")
     quotes = []
     for link in soup.find_all("a"):
-        if "quotes/quotes" in str(link):
-            if link.text:
-                quotes.append(str(link.text))
+        if "quotes/quotes" in str(link) and link.text:
+            quotes.append(str(link.text))
     return quotes

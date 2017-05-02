@@ -21,7 +21,6 @@ def get_poem(name, isPoet):
     random.seed(datetime.datetime.now())
     url = "https://www.poemhunter.com/"
     query = " ".join(name.split())
-    query = query.replace(" ", "+").lower()
     soup = bs4.BeautifulSoup(requests.get(url + "search/?q=" + query).text, "html.parser")
     if isPoet:
         found = False
@@ -41,40 +40,21 @@ def get_poem(name, isPoet):
             poems = int(item[poemsStart:poemsEnd])
             if name in data and re.search(r"\s", data) and poems > 0:
                 soup = bs4.BeautifulSoup(requests.get(url + poet + "poems/").text, "html.parser")
-                found = True
                 break
-        if not found:
-            return
-        poems = []
-        for link in soup.find_all("a"):
-            if re.match("/poem/", str(link.get("href"))):
-                poems.append(url + str(link.get("href")))
-        while True:
-            if not len(poems):
-                return
-            page = poems[random.randint(0, len(poems) - 1)]
+    poem = False
+    for link in soup.find_all("a"):
+        if re.match("/poem/", str(link.get("href"))):
+            page = url + str(link.get("href"))
             soup = bs4.BeautifulSoup(requests.get(page).text, "html.parser")
+            poem = True
             try:
                 body = str(soup.find_all("body"))
             except RecursionError:
-                poems.remove(page)
+                poem = False
                 continue
             break
-    else:
-        poem = False
-        for link in soup.find_all("a"):
-            if re.match("/poem/", str(link.get("href"))):
-                page = url + str(link.get("href"))
-                soup = bs4.BeautifulSoup(requests.get(page).text, "html.parser")
-                poem = True
-                try:
-                    body = str(soup.find_all("body"))
-                except RecursionError:
-                    poem = False
-                    continue
-                break
-        if not poem:
-            return
+    if not poem:
+        return
     while True:
         poemStart = re.search("<p>", body)
         poemEnd = re.search("</p>", body)

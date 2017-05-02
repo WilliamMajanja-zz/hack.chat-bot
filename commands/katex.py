@@ -4,14 +4,16 @@ import re
 
 
 def katex_generator(txt, size, color):
-    """Returns a katex formatted string (e.g., passing "hi" will return "${h}{i}$").
+    """Returns a KaTeX formatted string (e.g., passing "hi" will return "${h}{i}$").
 
     Keyword arguments:
     txt -- string; contains text to be converted to katex
-    size -- string; set to "large" for large text, "small" for small text or "" for no change in font size
-    color -- string; set to one of "red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow", "" (white)
+    size -- string; changes the font size of <txt>
+            values: "tiny" "scriptsize" "footnotesize" "small" "normalsize" "large" "Large" "LARGE" "huge" "Huge"
+    color -- string; changes the color of <txt>
+             values: "red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow", "" (empty string for white)
 
-    "{", "}" and "?" must be avoided in <txt> as katex doesn't support them.
+    "{", "}" and "?" must be avoided in <txt> as KaTeX doesn't support them.
     """
 
     txt = " ".join(txt.split())
@@ -26,8 +28,5 @@ def katex_generator(txt, size, color):
             katexColor = "\\" + colors[index % 6]
         text += "\\ " if char == " " else  katexColor + "{" + char + "}"
     txt = text
-    if size == "small":
-        size = "\\small"
-    elif size == "large":
-        size = "\\large"
+    size = "\\" + size if size else size
     return "${}$".format(size + txt)
