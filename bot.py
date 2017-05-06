@@ -3,6 +3,18 @@
 import datetime
 import random
 import re
+import os.path
+if not os.path.isfile("settings.py"):
+    print("You can change these settings later in the file settings.py located in the root directory of the bot.")
+    with open("settings.py", "w") as f:
+        name = input("Enter the name of the bot: ")
+        print("A tripcode is a randomly generated code to verify a user is the same regardless of their nickname.")
+        tripcode = input("Enter the tripcode or leave it blank if you don't want to use one yet: ")
+        channel = input("Enter which channel you would like to connect to: ")
+        f.write("#!/usr/bin/env python3\n\n\n" +
+                "name = \"{}\"\n".format(name) +
+                "tripcode = \"{}\"\n".format(tripcode) +
+                "channel = \"{}\"".format(channel))
 
 import hackchat
 
@@ -12,24 +24,25 @@ from commands import get_poem, katex, quotes, youtube
 
 random.seed(datetime.datetime.now())
 chat = hackchat.HackChat(settings.name + "#" + settings.tripcode, settings.channel)
+print("The bot is now running...")
 
 
 def message_got(chat, message, sender):
     """Checks messages on https://hack.chat and responds to ones triggering the bot."""
     trigger = "."
     msg = " ".join(message.split())
-    msg = message.strip().lower()
+    msg = message.strip()
     space = re.search(r"\s", msg)
     if msg[:1] == trigger:
         cmd = msg[1:space.start()] if space else msg[1:]
+        cmd = cmd.lower()
         arg = msg[space.end():] if space else False
-        notFound = "Sorry, I couldn't find any {} for that."
         valid = True
         if cmd == "poem" or cmd == "poet":
             if arg:
                 data = get_poem.get_poem(arg, True if cmd == "poet" else False)
                 if data == None:
-                    reply = notFound.format("poems")
+                    reply = "Sorry, I couldn't find any poems for that."
                 else:
                     poem = data[0].split("\n")
                     lines = 0
@@ -56,7 +69,8 @@ def message_got(chat, message, sender):
                             break
                         else:
                             color = ""
-                    sizes = ["small", "large"]
+                    sizes = ["tiny", "scriptsize", "footnotesize", "small", "normalsize", "large", "Large", "LARGE",
+                             "huge", "Huge"]
                     for size in sizes:
                         if size in cmd:
                             break
@@ -75,7 +89,7 @@ def message_got(chat, message, sender):
                 if data:
                     reply = data[random.randint(0, len(data) - 1)]
                 else:
-                    reply = notFound.format("quotes")
+                    reply = "Sorry, I couldn't find any quotes for that."
             else:
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
         elif cmd == "h" or cmd == "help":
@@ -102,7 +116,7 @@ def message_got(chat, message, sender):
                         if count == 3:
                             break
                 else:
-                    reply = notFound.format("videos")
+                    reply = "Sorry, I couldn't find any videos for that."
             else:
                 reply = "searches YouTube (e.g., {}yt star wars trailer)".format(trigger)
         elif cmd == "toss":
