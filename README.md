@@ -37,7 +37,9 @@ Make sure your code is [PEP 8](https://www.python.org/dev/peps/pep-0008/) compli
 are to be limited to 120 characters instead of 79. Make sure you aren't adding an existing feature. Here are some
 features that would be nice to have:
 
+- join other channels
 - definitions
+- conversational AI
 - jokes
 - afk
     - The user tells the bot that they are afk.
