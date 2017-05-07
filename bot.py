@@ -14,7 +14,7 @@ if not os.path.isfile("credentials.py"):
     print("You can change your credentials later in the file credentials.py located in the root directory of this bot.")
     with open("credentials.py", "w") as f:
         name = input("Enter the name of the bot: ")
-        print("A tripcode is a randomly generated code to verify a user is the same regardless of their nickname.")
+        print("A trip code is a randomly generated code to verify a user is the same regardless of their nickname.")
         tripcode = input("Enter the tripcode or leave it blank if you don't want to use one yet: ")
         channel = input("Enter which channel you would like to connect to: ")
         f.write("#!/usr/bin/env python3\n\n\n" +
@@ -97,8 +97,8 @@ def message_got(chat, message, sender):
             else:
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
         elif cmd == "h" or cmd == "help":
-            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote",
-                               "katex<optional_color><optional_size", "pwd"))
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd"
+                               "katex<optional_color><optional_size"))
             reply = ""
             for cmd in commands:
                 reply += " " + trigger + cmd
