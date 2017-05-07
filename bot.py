@@ -4,9 +4,15 @@ import datetime
 import random
 import re
 import os.path
-if not os.path.isfile("settings.py"):
-    print("You can change these settings later in the file settings.py located in the root directory of the bot.")
-    with open("settings.py", "w") as f:
+
+import hackchat
+
+from commands import get_poem, katex, password, quotes, youtube
+
+
+if not os.path.isfile("credentials.py"):
+    print("You can change your credentials later in the file credentials.py located in the root directory of this bot.")
+    with open("credentials.py", "w") as f:
         name = input("Enter the name of the bot: ")
         print("A tripcode is a randomly generated code to verify a user is the same regardless of their nickname.")
         tripcode = input("Enter the tripcode or leave it blank if you don't want to use one yet: ")
@@ -16,19 +22,17 @@ if not os.path.isfile("settings.py"):
                 "tripcode = \"{}\"\n".format(tripcode) +
                 "channel = \"{}\"".format(channel))
 
-import hackchat
 
-import settings
-from commands import get_poem, katex, quotes, youtube
+import credentials
 
 
 random.seed(datetime.datetime.now())
-chat = hackchat.HackChat(settings.name + "#" + settings.tripcode, settings.channel)
-print("The bot is now running...")
+chat = hackchat.HackChat(credentials.name + "#" + credentials.tripcode, credentials.channel)
+print("The bot has started...")
 
 
 def message_got(chat, message, sender):
-    """Checks messages on https://hack.chat and responds to ones triggering the bot."""
+    """This is an impure function that checks messages on https://hack.chat and responds to ones triggering the bot."""
     trigger = "."
     msg = " ".join(message.split())
     msg = message.strip()
@@ -94,7 +98,7 @@ def message_got(chat, message, sender):
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
         elif cmd == "h" or cmd == "help":
             commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote",
-                               "katex<optional_color><optional_size>"))
+                               "katex<optional_color><optional_size", "pwd"))
             reply = ""
             for cmd in commands:
                 reply += " " + trigger + cmd
@@ -104,6 +108,11 @@ def message_got(chat, message, sender):
                      "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                      "Language: Python\n" +
                      "Website: https://neelkamath.github.io\n")
+        elif cmd == "pwd":
+            if arg:
+                reply = password.strengthen_password(arg)
+            else:
+                reply = "strengthens a password (e.g., {}pwd mypassword)".format(trigger)
         elif cmd == "yt":
             if arg:
                 count = 0
@@ -124,7 +133,12 @@ def message_got(chat, message, sender):
         else:
             valid = False
         if valid:
-            chat.send_message("@{} ".format(sender) + reply)
+            reply = "@{} ".format(sender) + reply
+            chat.send_message(reply)
+            with open("activities.log", "a") as f:
+                prettifiedMsg = message.replace("\n", "\n{}".format(" " * len(sender + ": ")))
+                prettifiedReply = reply.replace("\n", "\n{}".format(" " * len(credentials.name + ": ")))
+                f.write(sender + ": " + prettifiedMsg + "\n" + credentials.name + ": " + prettifiedReply + "\n")
 
 
 chat.on_message.append(message_got)
