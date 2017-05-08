@@ -2,6 +2,7 @@
 
 import datetime
 import random
+import threading
 import re
 import os.path
 
@@ -29,6 +30,40 @@ import credentials
 
 
 random.seed(datetime.datetime.now())
+
+
+class ThreadChannels(threading.Thread):
+    """Joins a channel on https://hack.chat (e.g., https://hack.chat/?programming).
+
+    Keyword arguments:
+    name -- string; the nickname to be used upon entering the channel
+    tripCode -- string; the trip code to be used
+    channel -- string; the name of the channel to connect to
+    func -- function; the name of the function to handle activities in the channel (e.g., <message_got>)
+
+    Below is an example of how to use this class.
+    thread = ThreadChannels("myBot", "secretPassword", "programming", message_got)
+    thread.start()
+    """
+
+    def __init__(self, name, tripCode, channel, func):
+        """This function initializes values."""
+        threading.Thread.__init__(self)
+        self.name = name
+        self.tripCode = tripCode
+        self.channel = channel
+        self.func = func
+
+    def run(self):
+        """This function joins the channel on a new thread."""
+        self.join_channel()
+
+    def join_channel(self):
+        """This function joins a channel on https://hack.chat."""
+        chat = hackchat.HackChat(self.name + "#" + self.tripCode, self.channel)
+        chat.on_message.append(self.func)
+        chat.start_ping_thread()
+        chat.run_loop()
 
 
 def message_got(chat, message, sender):
@@ -96,7 +131,7 @@ def message_got(chat, message, sender):
             else:
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
         elif cmd == "h" or cmd == "help":
-            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd",
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd", "join",
                                "katex<optional_color><optional_size"))
             reply = ""
             for cmd in commands:
@@ -129,6 +164,12 @@ def message_got(chat, message, sender):
                 reply = "searches YouTube (e.g., {}yt star wars trailer)".format(trigger)
         elif cmd == "toss":
             reply = "heads" if random.randint(0, 1) == 1 else "tails"
+        elif cmd == "join":
+            if arg:
+                ThreadChannels(name, tripCode, arg, message_got).start()
+                reply = "I joined the channel \"{}\".".format(arg)
+            else:
+                reply = "joins a hack.chat channel (e.g., {}join pokemon)".format(trigger)
         else:
             valid = False
         if valid:
@@ -144,8 +185,5 @@ name = credentials.name
 tripCode = credentials.tripCode
 channel = credentials.channel
 trigger = credentials.trigger
-chat = hackchat.HackChat(name + "#" + tripCode, channel)
+ThreadChannels(name, tripCode, channel, message_got).start()
 print("The bot has started...")
-chat.on_message.append(message_got)
-chat.start_ping_thread()
-chat.run_loop()
