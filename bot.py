@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""This file is used to connect the bot to https://hack.chat.
+
+It creates a file named credentials.py containing credentials inputted by the user via the command line if one isn't
+found in this directory. It then connects to a channel specified in the file credentials.py on https://hack.chat and
+interacts with users triggering it. Its activities are logged in the file activities.log.
+"""
+
 import datetime
 import random
 import threading
