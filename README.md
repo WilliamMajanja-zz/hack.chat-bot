@@ -5,16 +5,14 @@ they would have without it. It features an activity logger and threading to easi
 
 # Using the bot
 
-If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on [?programming](https://hack.chat/?programming).
+If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on ?programming.
 
 # Local install for developers
 
 ## Prerequisites
 
 - [Python 3 or higher](https://www.python.org/downloads/)
-- hackchat: API wrapper to connect to the website `pip install hackchat`
-- BeautifulSoup 4: library to screen scrape `pip install bs4`
-- requests: HTTP library `pip install requests`
+- Install the dependencies: `pip install -r requirements.txt`
 
 ## Building
 
