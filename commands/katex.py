@@ -23,10 +23,15 @@ def katex_generator(txt, size, color):
         katexColor = ""
     colors = ["red", "orange", "green", "blue", "purple", "pink"]
     text = ""
-    for index, char in enumerate(txt):
+    index = 0
+    for char in txt:
         if color == "rainbow":
             katexColor = "\\" + colors[index % 6]
-        text += "\\ " if char == " " else  katexColor + "{" + char + "}"
+        if char == " ":
+            text += "\\ "
+        else:
+            text += katexColor + "{" + char + "}"
+            index += 1
     txt = text
     size = "\\" + size if size else size
     return "${}$".format(size + txt)
