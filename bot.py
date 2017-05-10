@@ -19,13 +19,13 @@ from commands import get_poem, katex, password, quotes, youtube
 
 
 if not os.path.isfile("credentials.py"):
-    print("You can change your credentials later in the file credentials.py located in the root directory of this bot.")
     with open("credentials.py", "w") as f:
-        name = input("Enter the name of the bot: ")
-        print("A trip code is a randomly generated code to verify a user is the same regardless of their nickname.")
-        tripCode = input("Enter the trip code or leave it blank if you don't want to use one yet: ")
-        channel = input("Enter which channel you would like to connect to: ")
-        trigger = input("Enter what will trigger the bot (e.g., entering \".\" will trigger the bot for \".help\"): ")
+        print("You can change your credentials in the file credentials.py.")
+        name = input("Enter the name of the bot (mandatory): ")
+        print("A trip code is a randomly generated code to verify a user regardless of their nickname.")
+        tripCode = input("Enter the trip code (optional): ")
+        channel = input("Enter which channel you would like to connect to (mandatory): ")
+        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
                 "tripCode = \"{}\"\n".format(tripCode) +
@@ -76,34 +76,30 @@ class ThreadChannels(threading.Thread):
 def message_got(chat, message, sender):
     """This is an impure function that checks messages on https://hack.chat and responds to ones triggering the bot."""
     msg = " ".join(message.split())
-    msg = message.strip()
     space = re.search(r"\s", msg)
-    if msg[:1] == trigger:
+    if msg[:1] == credentials.trigger:
         cmd = msg[1:space.start()] if space else msg[1:]
-        cmd = cmd.lower()
         arg = msg[space.end():] if space else False
-        valid = True
-        if cmd == "poem" or cmd == "poet":
+        replied = True
+        if cmd.lower() == "poem" or cmd.lower() == "poet":
             if arg:
                 data = get_poem.get_poem(arg, True if cmd == "poet" else False)
                 if data == None:
                     reply = "Sorry, I couldn't find any poems for that."
                 else:
                     poem = data[0].split("\n")
-                    lines = 0
                     reply = ""
-                    for line in poem:
+                    for index, line in enumerate(poem):
                         reply += line + "\n"
-                        lines += 1
-                        if lines == 7:
+                        if index == 7:
                             reply += data[1]
                             break
             else:
                 if cmd == "poem":
-                    reply = "finds a poem by its name (e.g., {}poem daffodils)".format(trigger)
+                    reply = "finds a poem by its name (e.g., {}poem daffodils)".format(credentials.trigger)
                 else:
-                    reply = "finds a poem from a poet (e.g., {}poet shakespeare)".format(trigger)
-        elif cmd[:5] == "katex":
+                    reply = "finds a poem from a poet (e.g., {}poet shakespeare)".format(credentials.trigger)
+        elif cmd[:5].lower() == "katex":
             if arg:
                 if "?" in arg or "{" in arg or "}" in arg:
                     reply = "KaTeX doesn't support \"?\", \"{\" and \"}\""
@@ -123,12 +119,12 @@ def message_got(chat, message, sender):
                             size = ""
                     reply = "says " + katex.katex_generator(arg, size, color)
             else:
-                reply = ("stylizes text (e.g., {}katex.rainbow.large hello world)\n".format(trigger) +
+                reply = ("stylizes text (e.g., {}katex.rainbow.large hello world)\n".format(credentials.trigger) +
                          "optional colors: \"red\", \"orange\", \"green\", \"blue\", \"pink\", \"purple\", \"gray\", " +
                          "\"rainbow\"\n" +
                          "optional sizes: \"tiny\", \"scriptsize\", \"footnotesize\", \"small\", \"normalsize\", " +
                          "\"large\", \"Large\", \"LARGE\", \"huge\", \"Huge\"")
-        elif cmd == "quote":
+        elif cmd.lower() == "quote":
             if arg:
                 data = quotes.quotes(arg)
                 if data:
@@ -136,25 +132,23 @@ def message_got(chat, message, sender):
                 else:
                     reply = "Sorry, I couldn't find any quotes for that."
             else:
-                reply = "gives quotes from people (e.g., {}quote buddha)".format(trigger)
-        elif cmd == "h" or cmd == "help":
+                reply = "gives quotes from people (e.g., {}quote buddha)".format(credentials.trigger)
+        elif cmd.lower() == "h" or cmd.lower() == "help":
             commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd", "join",
                                "katex<optional_color><optional_size"))
-            reply = ""
-            for cmd in commands:
-                reply += " " + trigger + cmd
-            reply = reply[1:]
-        elif cmd == "about":
+            reply = " {}".format(credentials.trigger).join(commands)
+            reply = "." + reply
+        elif cmd.lower() == "about":
             reply = ("Creator: Neel Kamath https://github.com/neelkamath\n" +
                      "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                      "Language: Python\n" +
                      "Website: https://neelkamath.github.io\n")
-        elif cmd == "pwd":
+        elif cmd.lower() == "pwd":
             if arg:
                 reply = password.strengthen_password(arg)
             else:
-                reply = "strengthens a password (e.g., {}pwd mypassword)".format(trigger)
-        elif cmd == "yt":
+                reply = "strengthens a password (e.g., {}pwd mypassword)".format(credentials.trigger)
+        elif cmd.lower() == "yt":
             if arg:
                 count = 0
                 videos = youtube.videos(arg)
@@ -168,18 +162,18 @@ def message_got(chat, message, sender):
                 else:
                     reply = "Sorry, I couldn't find any videos for that."
             else:
-                reply = "searches YouTube (e.g., {}yt star wars trailer)".format(trigger)
-        elif cmd == "toss":
+                reply = "searches YouTube (e.g., {}yt star wars trailer)".format(credentials.trigger)
+        elif cmd.lower() == "toss":
             reply = "heads" if random.randint(0, 1) == 1 else "tails"
-        elif cmd == "join":
+        elif cmd.lower() == "join":
             if arg:
-                ThreadChannels(name, tripCode, arg, message_got).start()
-                reply = "I joined the channel \"{}\".".format(arg)
+                ThreadChannels(credentials.name, credentials.tripCode, arg, message_got).start()
+                replied = False
             else:
-                reply = "joins a hack.chat channel (e.g., {}join pokemon)".format(trigger)
+                reply = "joins a hack.chat channel (e.g., {}join pokemon)".format(credentials.trigger)
         else:
-            valid = False
-        if valid:
+            replied = False
+        if replied:
             reply = "@{} ".format(sender) + reply
             chat.send_message(reply)
             with open("activities.log", "a") as f:
@@ -188,9 +182,5 @@ def message_got(chat, message, sender):
                 f.write(sender + ": " + prettifiedMsg + "\n" + credentials.name + ": " + prettifiedReply + "\n")
 
 
-name = credentials.name
-tripCode = credentials.tripCode
-channel = credentials.channel
-trigger = credentials.trigger
-ThreadChannels(name, tripCode, channel, message_got).start()
+ThreadChannels(credentials.name, credentials.tripCode, credentials.channel, message_got).start()
 print("The bot has started...")
