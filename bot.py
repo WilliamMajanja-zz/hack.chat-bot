@@ -15,7 +15,7 @@ import os.path
 
 import hackchat
 
-from commands import get_poem, katex, password, quotes, youtube
+from commands import get_poem, katex, password, quotes, youtube, dictionary
 
 
 if not os.path.isfile("credentials.py"):
@@ -26,11 +26,15 @@ if not os.path.isfile("credentials.py"):
         tripCode = input("Enter the trip code (optional): ")
         channel = input("Enter which channel you would like to connect to (mandatory): ")
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
+        oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
+        oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
                 "tripCode = \"{}\"\n".format(tripCode) +
                 "channel = \"{}\"\n".format(channel) +
-                "trigger = \"{}\"\n".format(trigger))
+                "trigger = \"{}\"\n".format(trigger) +
+                "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
+                "oxfordAppKey = \"{}\"\n".format(oxfordAppKey))
 
 
 import credentials
@@ -134,8 +138,8 @@ def message_got(chat, message, sender):
             else:
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(credentials.trigger)
         elif cmd.lower() == "h" or cmd.lower() == "help":
-            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd", "join",
-                               "katex<optional_color><optional_size"))
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd", "join", "define",
+                               "katex<optional_color><optional_size>"))
             reply = " {}".format(credentials.trigger).join(commands)
             reply = "." + reply
         elif cmd.lower() == "about":
@@ -143,6 +147,15 @@ def message_got(chat, message, sender):
                      "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                      "Language: Python\n" +
                      "Website: https://neelkamath.github.io\n")
+        elif cmd.lower() == "define":
+            if arg:
+                data = dictionary.definitions(credentials.oxfordAppId, credentials.oxfordAppKey, arg)
+                if data:
+                    reply = "{}: {}".format(arg, data[arg])
+                else:
+                    reply = "Sorry, I couldn't find any definitions for that."
+            else:
+                reply = "gives a definition (e.g., {}define hello)".format(credentials.trigger)
         elif cmd.lower() == "pwd":
             if arg:
                 reply = password.strengthen_password(arg)

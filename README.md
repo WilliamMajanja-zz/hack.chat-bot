@@ -35,7 +35,7 @@ Make sure your code is [PEP 8](https://www.python.org/dev/peps/pep-0008/) compli
 are to be limited to 120 characters instead of 79. Make sure you aren't adding an existing feature. Here are some
 features that would be nice to have:
 
-- definitions
+- translations
 - conversational AI
 - jokes
 - afk
