@@ -151,7 +151,7 @@ def message_got(chat, message, sender):
             if arg:
                 data = dictionary.definitions(credentials.oxfordAppId, credentials.oxfordAppKey, arg)
                 if data:
-                    reply = "{}: {}".format(arg, data[arg])
+                    reply = "{}: {}".format(arg, data)
                 else:
                     reply = "Sorry, I couldn't find any definitions for that."
             else:
