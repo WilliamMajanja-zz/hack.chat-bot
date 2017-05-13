@@ -1,7 +1,7 @@
 # hack.chat bot
 
 This is a bot running on [hack.chat](https://hack.chat/) for general usage. It is meant to perform tasks quicker than
-they would have without it. It features an activity logger and threading to easily join multiple channels.
+they would have without it.
 
 # Using the bot
 
@@ -25,8 +25,6 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 1. Run the script.
     - Windows: `python bot.py`
     - Linux: `python3 bot.py`
-
-The bots activities are logged in `activities.log`.
 
 ![Commands](screenshot.png)
 
