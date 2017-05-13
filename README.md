@@ -13,6 +13,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 
 - [Python 3 or higher](https://www.python.org/downloads/)
 - Install the dependencies: `pip install -r requirements.txt`
+- [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started)
 
 ## Building
 
@@ -35,26 +36,22 @@ Make sure your code is [PEP 8](https://www.python.org/dev/peps/pep-0008/) compli
 are to be limited to 120 characters instead of 79. Make sure you aren't adding an existing feature. Here are some
 features that would be nice to have:
 
-- translations
 - conversational AI
 - jokes
 - afk
     - The user tells the bot that they are afk.
     - The bot tells people @-mentioning the afk user that they are afk.
     - The afk status is removed upon receiving the users next message.
-- give the output of inputted code for a particular language
 - calculator
+- give the output of python code
 - google search
 - leave a message
     - The user tells the bot to message a person.
     - The bot will send the message to the person the next time they join or send a message.
-- whois
 - urban dictionary definitions
 - Tell what the time is in another place.
 - The bot will tell what the user usually names themselves upon being given a trip code.
 - currency converter
-- weather
-- show ratings
 - use an API to get poems instead of screen scraping
 - use an API to get quotes from famous people instead of screen scraping
 - use an API to search YouTube instead of screen scraping

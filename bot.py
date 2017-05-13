@@ -85,7 +85,17 @@ def message_got(chat, message, sender):
         cmd = msg[1:space.start()] if space else msg[1:]
         arg = msg[space.end():] if space else False
         replied = True
-        if cmd.lower() == "poem" or cmd.lower() == "poet":
+        if cmd.lower() == "h" or cmd.lower() == "help":
+            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "password", "join",
+                               "katex<optional_color><optional_size>", "define", "translate:<from>:<to>"))
+            reply = " {}".format(credentials.trigger).join(commands)
+            reply = "." + reply
+        elif cmd.lower() == "about":
+            reply = ("Creator: Neel Kamath https://github.com/neelkamath\n" +
+                     "Code: https://github.com/neelkamath/hack.chat-bot\n" +
+                     "Language: Python\n" +
+                     "Website: https://neelkamath.github.io\n")
+        elif cmd.lower() == "poem" or cmd.lower() == "poet":
             if arg:
                 data = get_poem.get_poem(arg, True if cmd == "poet" else False)
                 if data == None:
@@ -137,30 +147,65 @@ def message_got(chat, message, sender):
                     reply = "Sorry, I couldn't find any quotes for that."
             else:
                 reply = "gives quotes from people (e.g., {}quote buddha)".format(credentials.trigger)
-        elif cmd.lower() == "h" or cmd.lower() == "help":
-            commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "pwd", "join", "define",
-                               "katex<optional_color><optional_size>"))
-            reply = " {}".format(credentials.trigger).join(commands)
-            reply = "." + reply
-        elif cmd.lower() == "about":
-            reply = ("Creator: Neel Kamath https://github.com/neelkamath\n" +
-                     "Code: https://github.com/neelkamath/hack.chat-bot\n" +
-                     "Language: Python\n" +
-                     "Website: https://neelkamath.github.io\n")
         elif cmd.lower() == "define":
             if arg:
-                data = dictionary.definitions(credentials.oxfordAppId, credentials.oxfordAppKey, arg)
+                data = dictionary.define(arg)
                 if data:
                     reply = "{}: {}".format(arg, data)
                 else:
                     reply = "Sorry, I couldn't find any definitions for that."
             else:
                 reply = "gives a definition (e.g., {}define hello)".format(credentials.trigger)
-        elif cmd.lower() == "pwd":
+        elif cmd.lower()[:9] == "translate":
+            languages = {"en": "english",
+                         "es": "spanish",
+                         "nso": "pedi",
+                         "ro": "romanian",
+                         "ms": "malay",
+                         "zu": "zulu",
+                         "id": "indonesian",
+                         "tn": "tswana"}
+            supported = "supported languages: {}".format(", ".join(languages.values()))
+            if arg:
+                if len(re.findall(":", cmd)) == 2:
+                    firstColon = re.search(":", cmd)
+                    secondColon = re.search(":", cmd[firstColon.end():])
+                    srcLang = cmd[firstColon.end():firstColon.end() + secondColon.start()].lower()
+                    targetLang = cmd[firstColon.end() + secondColon.end():].lower()
+                    if srcLang in languages.values() and targetLang in languages.values():
+                        for language in languages:
+                            if srcLang == languages[language]:
+                                srcLang = language
+                            if targetLang == languages[language]:
+                                targetLang = language
+                        words = arg.split()
+                        translations = []
+                        translated = True
+                        for word in words:
+                            lastChar = word[len(word) - 1:]
+                            pattern = r"[^a-zA-Z\s]"
+                            lastChar = lastChar if re.search(pattern, word) else ""
+                            word = re.sub(pattern, "", word)
+                            word = dictionary.translate(word, srcLang, targetLang)
+                            if word == None:
+                                translated = False
+                                break
+                            translations.append(word + lastChar)
+                        reply = " ".join(translations) if translated else "I'm sorry, I couldn't translate all of that."
+                    else:
+                        reply = supported
+                else:
+                    reply = ("state the languages (e.g., {}translate:english:espanol)\n".format(credentials.trigger) +
+                             "{}".format(supported))
+            else:
+                reply = ("{}\n".format(supported) +
+                         "e.g., {}translate:english:espanol Hello, how are you?\n".format(credentials.trigger) +
+                         "will translate from from English to Espanol")
+        elif cmd.lower() == "password":
             if arg:
                 reply = password.strengthen_password(arg)
             else:
-                reply = "strengthens a password (e.g., {}pwd mypassword)".format(credentials.trigger)
+                reply = "strengthens a password (e.g., {}password mypassword)".format(credentials.trigger)
         elif cmd.lower() == "yt":
             if arg:
                 count = 0
@@ -196,4 +241,5 @@ def message_got(chat, message, sender):
 
 
 ThreadChannels(credentials.name, credentials.tripCode, credentials.channel, message_got).start()
-print("The bot has started...")
+dictionary = dictionary.Dictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
+print("The bot has started.")
