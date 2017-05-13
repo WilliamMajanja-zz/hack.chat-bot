@@ -15,22 +15,22 @@ import os.path
 
 import hackchat
 
-from commands import get_poem, katex, password, quotes, youtube, dictionary
+from commands import dictionary, get_poem, katex, password, quotes, youtube
 
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
         print("You can change your credentials in the file credentials.py.")
-        name = input("Enter the name of the bot (mandatory): ")
+        name = input("Enter the name of the bot: ")
         print("A trip code is a randomly generated code to verify a user regardless of their nickname.")
-        tripCode = input("Enter the trip code (optional): ")
-        channel = input("Enter which channel you would like to connect to (mandatory): ")
-        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
-        oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
-        oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
+        password = input("Enter the password for the trip code (optional): ")
+        channel = input("Enter which channel you would like to connect to: ")
+        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\"): ")
+        oxfordAppId = input("Enter the Oxford Dictionaries API app id: ")
+        oxfordAppKey = input("Enter the Oxford Dictionaries API app key: ")
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
-                "tripCode = \"{}\"\n".format(tripCode) +
+                "password = \"{}\"\n".format(password) +
                 "channel = \"{}\"\n".format(channel) +
                 "trigger = \"{}\"\n".format(trigger) +
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
@@ -47,23 +47,23 @@ class ThreadChannels(threading.Thread):
     """Joins a channel on https://hack.chat (e.g., https://hack.chat/?programming).
 
     Keyword arguments:
-    name -- string; the nickname to be used upon entering the channel
-    tripCode -- string; the trip code to be used
-    channel -- string; the name of the channel to connect to
     func -- function; the name of the function to handle activities in the channel (e.g., <message_got>)
+    channel -- string; the name of the channel to connect to
+    name -- string; the nickname to be used upon entering the channel
+    password -- optional string; the password that gives a trip code to be used
 
     Below is an example of how to use this class.
-    thread = ThreadChannels("myBot", "secretPassword", "programming", message_got)
+    thread = ThreadChannels(message_got, "programming", "myBot", "secretPassword")
     thread.start()
     """
 
-    def __init__(self, name, tripCode, channel, func):
+    def __init__(self, func, channel, name, password = ""):
         """This function initializes values."""
         threading.Thread.__init__(self)
-        self.name = name
-        self.tripCode = tripCode
-        self.channel = channel
         self.func = func
+        self.channel = channel
+        self.name = name
+        self.password = password
 
     def run(self):
         """This function joins the channel on a new thread."""
@@ -71,7 +71,7 @@ class ThreadChannels(threading.Thread):
 
     def join_channel(self):
         """This function joins a channel on https://hack.chat."""
-        chat = hackchat.HackChat(self.name + "#" + self.tripCode, self.channel)
+        chat = hackchat.HackChat(self.name + "#" + self.password, self.channel)
         chat.on_message.append(self.func)
         chat.start_ping_thread()
         chat.run_loop()
@@ -81,7 +81,7 @@ def message_got(chat, message, sender):
     """This is an impure function that checks messages on https://hack.chat and responds to ones triggering the bot."""
     msg = " ".join(message.split())
     space = re.search(r"\s", msg)
-    if msg[:1] == credentials.trigger:
+    if msg[:len(credentials.trigger)] == credentials.trigger:
         cmd = msg[1:space.start()] if space else msg[1:]
         arg = msg[space.end():] if space else False
         replied = True
@@ -225,7 +225,7 @@ def message_got(chat, message, sender):
             reply = "heads" if random.randint(0, 1) == 1 else "tails"
         elif cmd.lower() == "join":
             if arg:
-                ThreadChannels(credentials.name, credentials.tripCode, arg, message_got).start()
+                ThreadChannels(message_got, arg, credentials.name, credentials.password).start()
                 replied = False
             else:
                 reply = "joins a hack.chat channel (e.g., {}join pokemon)".format(credentials.trigger)
@@ -240,6 +240,6 @@ def message_got(chat, message, sender):
                 f.write(sender + ": " + prettifiedMsg + "\n" + credentials.name + ": " + prettifiedReply + "\n")
 
 
-ThreadChannels(credentials.name, credentials.tripCode, credentials.channel, message_got).start()
+ThreadChannels(message_got, credentials.channel, credentials.name, credentials.password).start()
 dictionary = dictionary.Dictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
 print("The bot has started.")
