@@ -14,7 +14,7 @@ import sys
 
 import hackchat
 
-from commands import dictionary, get_poem, katex, password, quotes, youtube
+from commands import currency, dictionary, get_poem, katex, password, quotes, youtube
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
@@ -27,13 +27,15 @@ if not os.path.isfile("credentials.py"):
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
         oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
         oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
+        exchangeRateApiKey = input("Enter the currency converter API key (optional): ")
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
                 "password = \"{}\"\n".format(password) +
                 "channel = \"{}\"\n".format(channel) +
                 "trigger = \"{}\"\n".format(trigger) +
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
-                "oxfordAppKey = \"{}\"\n".format(oxfordAppKey))
+                "oxfordAppKey = \"{}\"\n".format(oxfordAppKey) +
+                "exchangeRateApiKey = \"{}\"\n".fomrat(exchangerateApiKey))
 
 import credentials
 
@@ -83,12 +85,28 @@ def message_got(chat, message, sender):
                           "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                           "Language: Python\n" +
                           "Website: https://neelkamath.github.io\n")
+    elif (message[:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger) and
+          credentials.exchangeRateApiKey):
+        converted = False
+        if len(re.findall(":", message)) == 2:
+            firstColon = re.search(":", message)
+            secondColon = re.search(":", message[firstColon.end():])
+            fromCode = message[firstColon.end():firstColon.end() + secondColon.start()]
+            toCode = message.strip()[firstColon.end() + secondColon.end():]
+            if fromCode and toCode:
+                rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
+                if type(rate) is float:
+                    converted = True
+                    chat.send_message("@{} 1 {} = {} {}".format(sender, fromCode.upper(), rate, toCode.upper()))
+        if not converted:
+            chat.send_message("@{} Sorry, I couldn't convert that. ".format(sender) +
+                              "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
     elif (message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
           credentials.oxfordAppId and credentials.oxfordAppKey):
         space = re.search(r"\s", message.strip())
         if space:
             data = dictionary.define(message[space.end():])
-            if data:
+            if type(data) is str:
                 chat.send_message("@{} {}: {}".format(sender, message[space.end():], data))
             else:
                 chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
@@ -100,6 +118,8 @@ def message_got(chat, message, sender):
         commands = ["about", "h", "help", "yt", "poem", "poet", "toss", "quote", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
+        if credentials.exchangeRateApiKey:
+            commands.append("rate")
         reply = " {}".format(credentials.trigger).join(sorted(commands))
         chat.send_message("@{} {}{}".format(sender, credentials.trigger, reply))
     elif message[:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
@@ -158,7 +178,7 @@ def message_got(chat, message, sender):
                 reply = ""
                 for index, line in enumerate(poem):
                     reply += line + "\n"
-                    if index == 7:
+                    if index == 5:
                         reply += data[1]
                         break
                 chat.send_message("@{} {}".format(sender, reply))
@@ -213,7 +233,7 @@ def message_got(chat, message, sender):
                     lastChar = lastChar if re.search(pattern, word) else ""
                     word = re.sub(pattern, "", word)
                     word = dictionary.translate(word, srcLang, targetLang)
-                    if word == None:
+                    if type(word) is not str:
                         translations = []
                         break
                     translations.append(word + lastChar)
@@ -227,7 +247,7 @@ def message_got(chat, message, sender):
             translatable = False
         if not translatable:
             chat.send_message("@{} supported languages: {}\n".format(sender, ", ".join(languages.values())) +
-                              "e.g., {}translate:english:spanish Hello, how are you?\n".format(credentials.trigger) +
+                              "e.g., {}translate:english:spanish I have a holiday!\n".format(credentials.trigger) +
                               "will translate from from English to Spanish")
     elif message[:len(credentials.trigger + "yt")].lower() == "{}yt".format(credentials.trigger):
         space = re.search(r"\s", message.strip())
