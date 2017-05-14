@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-"""Contains Oxford dictionary API functionality."""
+"""Contains functionality from various dictionaries."""
 
 import requests
 import json
 
 
-class Dictionary():
+class OxfordDictionary():
     """Uses the Oxford Dictionaries API for language tools such as definitions and translations.
 
     Keyword arguments:
@@ -85,3 +85,19 @@ class Dictionary():
             return data["translations"][0]["text"]
         except KeyError:
             return
+
+
+def urban_dictionary(search):
+    """Returns a definition from Urban Dictionary using <search>.
+
+    Return values:
+    data -- dict; {"word": word, "definition": definition, "permalink": permalink} if there's a definition for <search>
+    None -- None; if no definition was found with <search>
+    """
+
+    url = "http://api.urbandictionary.com/v0/define?term={}".format(search)
+    data = json.loads(requests.get(url).text)
+    if data["result_type"] == "no_results":
+        return
+    data = data["list"][0]
+    return {"word": data["word"], "definition": data["definition"], "permalink": data["permalink"]}

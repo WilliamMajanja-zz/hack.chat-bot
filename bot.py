@@ -105,7 +105,7 @@ def message_got(chat, message, sender):
           credentials.oxfordAppId and credentials.oxfordAppKey):
         space = re.search(r"\s", message.strip())
         if space:
-            data = dictionary.define(message[space.end():])
+            data = oxfordDictionary.define(message[space.end():])
             if type(data) is str:
                 chat.send_message("@{} {}: {}".format(sender, message[space.end():], data))
             else:
@@ -115,7 +115,7 @@ def message_got(chat, message, sender):
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "poem", "poet", "toss", "password", "join", "katex"]
+        commands = ["about", "h", "help", "poem", "urban", "poet", "toss", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -123,7 +123,7 @@ def message_got(chat, message, sender):
         reply = " {}".format(credentials.trigger).join(sorted(commands))
         chat.send_message("@{} {}{}".format(sender, credentials.trigger, reply))
     elif message[:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
-        space = re.search(r"\s", message)
+        space = re.search(r"\s", message.strip())
         if space:
             ThreadChannels(message_got, message[space.end():], credentials.name, credentials.password).start()
         else:
@@ -218,7 +218,7 @@ def message_got(chat, message, sender):
                     pattern = r"[^a-zA-Z\s]"
                     lastChar = lastChar if re.search(pattern, word) else ""
                     word = re.sub(pattern, "", word)
-                    word = dictionary.translate(word, srcLang, targetLang)
+                    word = oxfordDictionary.translate(word, srcLang, targetLang)
                     if type(word) is not str:
                         translations = []
                         break
@@ -235,9 +235,26 @@ def message_got(chat, message, sender):
             chat.send_message("@{} supported languages: {}\n".format(sender, ", ".join(languages.values())) +
                               "e.g., {}translate:english:spanish I have a holiday!\n".format(credentials.trigger) +
                               "will translate from from English to Spanish")
+    elif message[:len(credentials.trigger + "urban")].lower() == "{}urban".format(credentials.trigger):
+        space = re.search(r"\s", message.strip())
+        if space:
+            data = dictionary.urban_dictionary(message[space.end():])
+            if data:
+                words = data["definition"].split()
+                definition = ""
+                length = 0
+                for word in words:
+                    definition += word + " "
+                    if len(definition) > 80 * 6:
+                        break
+                chat.send_message("@{} {}: {} {}".format(sender, data["word"], definition, data["permalink"]))
+            else:
+                chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
+        else:
+            chat.send_message("@{} searches Urban Dictionary (e.g., {}urban swag)".format(sender, credentials.trigger))
 
 
 if __name__ == "__main__":
     ThreadChannels(message_got, credentials.channel, credentials.name, credentials.password).start()
-    dictionary = dictionary.Dictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
+    oxfordDictionary = dictionary.OxfordDictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
     print("The bot has started.")
