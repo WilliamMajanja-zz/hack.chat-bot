@@ -5,7 +5,8 @@ they would have without it.
 
 # Using the bot
 
-If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on ?programming.
+If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on
+[?programming](https://hack.chat/?programming).
 
 # Local install for developers
 

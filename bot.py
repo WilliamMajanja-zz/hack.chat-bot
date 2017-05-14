@@ -92,7 +92,7 @@ def message_got(chat, message, sender):
             firstColon = re.search(":", message)
             secondColon = re.search(":", message[firstColon.end():])
             fromCode = message[firstColon.end():firstColon.end() + secondColon.start()]
-            toCode = message.strip()[firstColon.end() + secondColon.end():]
+            toCode = message[firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
             if fromCode and toCode:
                 rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
                 if type(rate) is float:
