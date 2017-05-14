@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-"""This file is used to connect the bot to https://hack.chat.
+"""This is used to connect the bot to https://hack.chat using credentials from the file credentials.py.
 
-It creates a file named credentials.py containing credentials inputted by the user via the command line if one isn't
-found in this directory. It then connects to a channel specified in the file credentials.py on https://hack.chat and
-interacts with users triggering it.
+For API-specific features, it checks if the API tokens exist and only then exhibits that functionality.
 """
 
 import datetime
@@ -12,22 +10,23 @@ import random
 import threading
 import re
 import os.path
+import sys
 
 import hackchat
 
 from commands import dictionary, get_poem, katex, password, quotes, youtube
 
-
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
-        print("You can change your credentials in the file credentials.py.")
-        name = input("Enter the name of the bot: ")
+        print("You can change your credentials in the file credentials.py. The features whose API tokens you don't " +
+              "enter will remain inaccessible until you enter them.")
+        name = input("Enter the name of the bot (mandatory): ")
         print("A trip code is a randomly generated code to verify a user regardless of their nickname.")
         password = input("Enter the password for the trip code (optional): ")
-        channel = input("Enter which channel you would like to connect to: ")
-        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\"): ")
-        oxfordAppId = input("Enter the Oxford Dictionaries API app id: ")
-        oxfordAppKey = input("Enter the Oxford Dictionaries API app key: ")
+        channel = input("Enter which channel you would like to connect to (mandatory): ")
+        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
+        oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
+        oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
                 "password = \"{}\"\n".format(password) +
@@ -36,10 +35,10 @@ if not os.path.isfile("credentials.py"):
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
                 "oxfordAppKey = \"{}\"\n".format(oxfordAppKey))
 
-
 import credentials
 
-
+if not credentials.name or not credentials.channel or not credentials.trigger:
+    sys.exit("Make sure you have entered \"name\", \"channel\" and \"trigger\" in the file credentials.py.")
 random.seed(datetime.datetime.now())
 
 
@@ -84,7 +83,8 @@ def message_got(chat, message, sender):
                           "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                           "Language: Python\n" +
                           "Website: https://neelkamath.github.io\n")
-    elif message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger):
+    elif (message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
+          credentials.oxfordAppId and credentials.oxfordAppKey):
         space = re.search(r"\s", message.strip())
         if space:
             data = dictionary.define(message[space.end():])
@@ -95,11 +95,12 @@ def message_got(chat, message, sender):
         else:
             chat.send_message("@{} gives a definition (e.g., {}define hello)".format(sender, credentials.trigger))
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
-         len(message.strip()) == len(credentials.trigger + "h")) or
-        message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = sorted(("about", "h", "help", "yt", "poem", "poet", "toss", "quote", "password", "join", "katex",
-                           "define", "translate"))
-        reply = " {}".format(credentials.trigger).join(commands)
+           len(message.strip()) == len(credentials.trigger + "h")) or
+          message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
+        commands = ["about", "h", "help", "yt", "poem", "poet", "toss", "quote", "password", "join", "katex"]
+        if credentials.oxfordAppId and credentials.oxfordAppKey:
+            commands += ["define", "translate"]
+        reply = " {}".format(credentials.trigger).join(sorted(commands))
         chat.send_message("@{} {}{}".format(sender, credentials.trigger, reply))
     elif message[:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
         space = re.search(r"\s", message)
@@ -180,7 +181,8 @@ def message_got(chat, message, sender):
             chat.send_message("@{} gives quotes from people (e.g., {}quote buddha)".format(sender, credentials.trigger))
     elif message[:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
         chat.send_message("@{} {}".format(sender, "heads" if random.randint(0, 1) == 1 else "tails"))
-    elif message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger):
+    elif (message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
+          credentials.oxfordAppId and credentials.oxfordAppKey):
         languages = {"en": "english",
                      "es": "spanish",
                      "nso": "pedi",
