@@ -115,7 +115,7 @@ def message_got(chat, message, sender):
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "yt", "poem", "poet", "toss", "quote", "password", "join", "katex"]
+        commands = ["about", "h", "help", "poem", "poet", "toss", "quote", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -245,23 +245,6 @@ def message_got(chat, message, sender):
             chat.send_message("@{} supported languages: {}\n".format(sender, ", ".join(languages.values())) +
                               "e.g., {}translate:english:spanish I have a holiday!\n".format(credentials.trigger) +
                               "will translate from from English to Spanish")
-    elif message[:len(credentials.trigger + "yt")].lower() == "{}yt".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
-        if space:
-            count = 0
-            videos = youtube.videos(message[space.end():])
-            if videos:
-                reply = ""
-                for video in videos:
-                    reply += video + "\n" + videos[video] + "\n"
-                    count += 1
-                    if count == 3:
-                        break
-                chat.send_message("@{} {}".format(sender, reply))
-            else:
-                chat.send_message("@{} Sorry, I couldn't find any videos for that.".format(sender))
-        else:
-            chat.send_message("@{} searches YouTube (e.g., {}yt batman trailer)".format(sender, credentials.trigger))
 
 
 if __name__ == "__main__":
