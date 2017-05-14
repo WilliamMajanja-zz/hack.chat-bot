@@ -14,7 +14,7 @@ import sys
 
 import hackchat
 
-from commands import currency, dictionary, katex, paste, poetry, password, quotes, youtube
+from commands import currency, dictionary, katex, paste, poetry, password
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
@@ -115,7 +115,7 @@ def message_got(chat, message, sender):
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "poem", "poet", "toss", "quote", "password", "join", "katex"]
+        commands = ["about", "h", "help", "poem", "poet", "toss", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -185,16 +185,6 @@ def message_got(chat, message, sender):
             elif message[len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
                 chat.send_message("@{} finds a poem from a poet ".format(sender) +
                                   "(e.g., {}poet shakespeare)".format(credentials.trigger))
-    elif message[:len(credentials.trigger + "quote")].lower() == "{}quote".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
-        if space:
-            data = quotes.quotes(message[:space.start()])
-            if data:
-                chat.send_message("@{} {}".format(sender, data[random.randint(0, len(data) - 1)]))
-            else:
-                chat.send_message("@{} Sorry, I couldn't find any quotes for that.".format(sender))
-        else:
-            chat.send_message("@{} gives quotes from people (e.g., {}quote buddha)".format(sender, credentials.trigger))
     elif message[:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
         chat.send_message("@{} {}".format(sender, "heads" if random.randint(0, 1) == 1 else "tails"))
     elif (message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and

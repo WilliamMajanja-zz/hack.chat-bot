@@ -1,3 +1,2 @@
 hackchat
-bs4
 requests
