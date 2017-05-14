@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Contains Oxford dictionary API functionality."""
+
 import requests
 import json
 
@@ -18,17 +20,23 @@ class Dictionary():
         self.appKey = appKey
 
     def define(self, word, lang = "en"):
-        """Returns a definition (string) or <None> if a definition was or wasn't found respectively.
+        """Returns a definition..
 
         Keyword arguments:
         word -- the word to be defined
         lang -- optional string; an IANA language code indicating which language to use (e.g., <"en"> for English)
+
+        Return values:
+        definition -- string; the definition for <word>
+        404 -- int; the status code if the word wasn't found
+        500 -- int; the status code if there was a processing error
+        None -- <None>; if the word was found but there wasn't a definition
         """
 
         url = "https://od-api.oxforddictionaries.com/api/v1/entries/{}/{}".format(lang, word.lower())
         site = requests.get(url, headers = {"app_id": self.appId, "app_key": self.appKey})
-        if site.status_code == 404 or site.status_code == 500: # 404: NO DEFINITION, 500: PROCESSING ERROR
-            return
+        if site.status_code == 404 or site.status_code == 500: # 404: NOT FOUND; 500: PROCESSING ERROR
+            return site.status_code
         data = site.json()
         data = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]
         if "definitions" in data:
@@ -41,6 +49,13 @@ class Dictionary():
         word -- string; the word to be translated
         srcLang -- string; the IANA language code indicating which language <word> is in
         targetLang -- string; the IANA language code indicating which language <word> should be translated to
+
+        Return values:
+        translation -- string; the translation of <word>
+        400 -- int; the status code if <targetLang> isn't known
+        404 -- int; the status code if no translation was found
+        500 -- int; the status code if there was a processing error
+        None -- <None>; if the word was found but a translation doesn't exist
 
         The languages supported are (IANA language code: language name)
         en: English
@@ -61,7 +76,7 @@ class Dictionary():
         # 404: NO TRANSLATION FOUND
         # 500: INTERNAL ERROR
         if site.status_code == 400 or site.status_code == 404 or site.status_code == 500:
-            return
+            return site.status_code
         data = site.json()
         data = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]
         try:
