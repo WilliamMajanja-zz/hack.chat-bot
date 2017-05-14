@@ -112,10 +112,20 @@ def message_got(chat, message, sender):
                 chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
         else:
             chat.send_message("@{} e.g., {}define hello".format(sender, credentials.trigger))
+    elif message[:len(credentials.trigger + "math")].lower() == "{}math".format(credentials.trigger):
+        space = re.search(r"\s", message.strip())
+        if space:
+            try:
+                output = eval(message[space.end():])
+            except Exception as e:
+                output = e
+            chat.send_message("@{} {}".format(sender, output))
+        else:
+            chat.send_message("@{} calculator (e.g., {}math 3 + 3)".format(sender, credentials.trigger))
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "poem", "urban", "poet", "toss", "password", "join", "katex"]
+        commands = ["about", "h", "help", "poem", "urban", "poet", "toss", "math", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
