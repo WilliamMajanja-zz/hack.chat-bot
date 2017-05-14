@@ -12,9 +12,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 
 ## Prerequisites
 
-Skipping the optional prerequisites will remove the features specific to them until you do them. So if you haven't
-gotten your Oxford API tokens, the dictionary functionality will be absent (until and unless you enter them later) to
-prevent crashes.
+Skipping the optional prerequisites will remove the features specific to them until perform them.
 
 ### Mandatory
 
