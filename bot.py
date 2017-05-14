@@ -14,7 +14,7 @@ import sys
 
 import hackchat
 
-from commands import currency, dictionary, get_poem, katex, password, quotes, youtube
+from commands import currency, dictionary, katex, paste, poetry, password, quotes, youtube
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
@@ -111,7 +111,7 @@ def message_got(chat, message, sender):
             else:
                 chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
         else:
-            chat.send_message("@{} gives a definition (e.g., {}define hello)".format(sender, credentials.trigger))
+            chat.send_message("@{} e.g., {}define hello".format(sender, credentials.trigger))
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
@@ -166,22 +166,18 @@ def message_got(chat, message, sender):
           message[:len(credentials.trigger + "poet")].lower() == "{}poet".format(credentials.trigger)):
         space = re.search(r"\s", message.strip())
         if space:
-            if message[len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
-                poet = True
+            isAuthor = True if message[len(credentials.trigger):len(credentials.trigger + "poet")] == "poet" else False
+            data = poetry.poems(message[space.end():], isAuthor)
+            if data:
+                data = data[random.randint(0, len(data) - 1)]
+                poem = ""
+                for line in range(0, 3):
+                    poem += data["poem"].split("\n")[line] + "\n"
+                pastedPoem = paste.dpaste(data["poem"], title = "{} by {}".format(data["title"], data["author"]))
+                chat.send_message("@{} {}\nBy: {}\n{}".format(sender, data["title"], data["author"], poem) +
+                                  "You can read the rest at {}".format(pastedPoem))
             else:
-                poet = False
-            data = get_poem.get_poem(message[space.end():], poet)
-            if data == None:
                 chat.send_message("@{} Sorry, I couldn't find any poems for that.".format(sender))
-            else:
-                poem = data[0].split("\n")
-                reply = ""
-                for index, line in enumerate(poem):
-                    reply += line + "\n"
-                    if index == 5:
-                        reply += data[1]
-                        break
-                chat.send_message("@{} {}".format(sender, reply))
         else:
             if message[len(credentials.trigger):len(credentials.trigger + "poem")].lower() == "poem":
                 chat.send_message("@{} finds a poem by its name ".format(sender) +
