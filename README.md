@@ -12,25 +12,18 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 
 ## Prerequisites
 
-Skipping the optional prerequisites will remove the features specific to them until perform them.
-
-### Mandatory
-
 - [Python 3 or higher](https://www.python.org/downloads/)
-- Install the dependencies: `pip install -r requirements.txt`
-
-### Optional
-
-- [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started)
-- [Currency Converter API tokens](https://www.exchangerate-api.com/)
+- [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started) (optional)
+- [Currency Converter API tokens](https://www.exchangerate-api.com/) (optional)
 
 ## Building
 
 1. Clone the repository: `git clone https://github.com/neelkamath/hack.chat-bot`
+1. Install the dependencies: `pip install -r requirements.txt`
 
 # Usage
 
-1. Change the directory: `cd hack.chat-bot`
+1. Change the directory: `cd hack.chat-bot/src`
 1. Run the script.
     - Windows: `python bot.py`
     - Linux: `python3 bot.py`
