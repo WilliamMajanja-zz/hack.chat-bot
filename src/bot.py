@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-"""This is used to connect the bot to https://hack.chat using credentials from the file credentials.py.
-
-For API-specific features, it checks if the API tokens exist and only then exhibits that functionality.
-"""
+"""This is used to connect the bot to https://hack.chat using credentials from the file credentials.py."""
 
 import datetime
 import random
@@ -35,7 +32,7 @@ if not os.path.isfile("credentials.py"):
                 "trigger = \"{}\"\n".format(trigger) +
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
                 "oxfordAppKey = \"{}\"\n".format(oxfordAppKey) +
-                "exchangeRateApiKey = \"{}\"\n".fomrat(exchangerateApiKey))
+                "exchangeRateApiKey = \"{}\"\n".format(exchangeRateApiKey))
 
 import credentials
 
@@ -115,10 +112,13 @@ def message_got(chat, message, sender):
     elif message[:len(credentials.trigger + "math")].lower() == "{}math".format(credentials.trigger):
         space = re.search(r"\s", message.strip())
         if space:
-            try:
-                output = eval(message[space.end():])
-            except Exception as e:
-                output = e
+            if "print" in message or "input" in message or "exit" in message or "quit" in message:
+                output = "an error occurred"
+            else:
+                try:
+                    output = eval(message[space.end():])
+                except Exception as e:
+                    output = "an error occurred"
             chat.send_message("@{} {}".format(sender, output))
         else:
             chat.send_message("@{} calculator (e.g., {}math 3 + 3)".format(sender, credentials.trigger))
