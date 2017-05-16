@@ -82,22 +82,6 @@ def message_got(chat, message, sender):
                           "Code: https://github.com/neelkamath/hack.chat-bot\n" +
                           "Language: Python\n" +
                           "Website: https://neelkamath.github.io\n")
-    elif (message[:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger) and
-          credentials.exchangeRateApiKey):
-        converted = False
-        if len(re.findall(":", message)) == 2:
-            firstColon = re.search(":", message)
-            secondColon = re.search(":", message[firstColon.end():])
-            fromCode = message[firstColon.end():firstColon.end() + secondColon.start()]
-            toCode = message[firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
-            if fromCode and toCode:
-                rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
-                if type(rate) is float:
-                    converted = True
-                    chat.send_message("@{} 1 {} = {} {}".format(sender, fromCode.upper(), rate, toCode.upper()))
-        if not converted:
-            chat.send_message("@{} Sorry, I couldn't convert that. ".format(sender) +
-                              "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
     elif (message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
           credentials.oxfordAppId and credentials.oxfordAppKey):
         space = re.search(r"\s", message.strip())
@@ -109,23 +93,10 @@ def message_got(chat, message, sender):
                 chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
         else:
             chat.send_message("@{} e.g., {}define hello".format(sender, credentials.trigger))
-    elif message[:len(credentials.trigger + "math")].lower() == "{}math".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
-        if space:
-            if "print" in message or "input" in message or "exit" in message or "quit" in message:
-                output = "an error occurred"
-            else:
-                try:
-                    output = eval(message[space.end():])
-                except Exception as e:
-                    output = "an error occurred"
-            chat.send_message("@{} {}".format(sender, output))
-        else:
-            chat.send_message("@{} calculator (e.g., {}math 3 + 3)".format(sender, credentials.trigger))
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "poem", "urban", "poet", "toss", "math", "password", "join", "katex"]
+        commands = ["about", "h", "help", "poem", "urban", "poet", "toss", "password", "join", "katex"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -195,6 +166,22 @@ def message_got(chat, message, sender):
             elif message[len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
                 chat.send_message("@{} finds a poem from a poet ".format(sender) +
                                   "(e.g., {}poet shakespeare)".format(credentials.trigger))
+    elif (message[:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger) and
+          credentials.exchangeRateApiKey):
+        converted = False
+        if len(re.findall(":", message)) == 2:
+            firstColon = re.search(":", message)
+            secondColon = re.search(":", message[firstColon.end():])
+            fromCode = message[firstColon.end():firstColon.end() + secondColon.start()]
+            toCode = message[firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
+            if fromCode and toCode:
+                rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
+                if type(rate) is float:
+                    converted = True
+                    chat.send_message("@{} 1 {} = {} {}".format(sender, fromCode.upper(), rate, toCode.upper()))
+        if not converted:
+            chat.send_message("@{} Sorry, I couldn't convert that. ".format(sender) +
+                              "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
     elif message[:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
         chat.send_message("@{} {}".format(sender, "heads" if random.randint(0, 1) == 1 else "tails"))
     elif (message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
