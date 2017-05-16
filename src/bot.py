@@ -11,7 +11,7 @@ import sys
 
 import hackchat
 
-from commands import currency, jokes, dictionary, katex, paste, poetry, password
+from commands import currency, jokes, dictionary, katex, password, paste, poetry, search
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
@@ -96,7 +96,8 @@ def message_got(chat, message, sender):
     elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(message.strip()) == len(credentials.trigger + "h")) or
           message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "poem", "urban", "poet", "joke", "toss", "password", "join", "katex"]
+        commands = ["about", "h", "help", "join", "joke", "katex", "poem", "poet", "password", "search", "toss",
+                    "urban"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -184,6 +185,32 @@ def message_got(chat, message, sender):
         if not converted:
             chat.send_message("@{} Sorry, I couldn't convert that. ".format(sender) +
                               "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
+    elif message[:len(credentials.trigger + "search")].lower() == "{}search".format(credentials.trigger):
+        space = re.search(r"\s", message)
+        if space:
+            results = search.duckduckgo(message[space.end():], "hack.chat bot")
+            reply = ""
+            if "Answer" in results or "AbstractText" in results:
+                if "URL" in results:
+                    reply += "{} ".format(results["URL"])
+                if "Heading" in results:
+                    reply += "{}: ".format(results["Heading"])
+                if "Answer" in results:
+                    modify = results["Answer"]
+                elif "AbstractText" in results:
+                    modify = results["AbstractText"]
+                modify = modify.split(". ")
+                modified = ""
+                count = 0
+                for sentence in modify:
+                    count += len(sentence)
+                    if count > 80 * 6:
+                        reply += modified
+                        break
+                    modified += "{}. ".format(sentence)
+            chat.send_message("@{} {}".format(sender, reply if reply else "Sorry, I couldn't find anything."))
+        else:
+            chat.send_message("@{} instant answers (e.g., {}search pokemon black)".format(sender, credentials.trigger))
     elif message[:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
         chat.send_message("@{} {}".format(sender, "heads" if random.randint(0, 1) == 1 else "tails"))
     elif (message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
