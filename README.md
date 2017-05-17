@@ -2,9 +2,7 @@
 
 This is a bot running on [hack.chat](https://hack.chat/) for general use and is meant to perform tasks quicker.
 
-![DuckDuckGo](images/ddg.png)
-
-The search feature of the bot uses [DuckDuckGo's API](https://duckduckgo.com/).
+![DuckDuckGo](images/ddg.png) The search feature of the bot uses [DuckDuckGo's API](https://duckduckgo.com/).
 
 # Using the bot
 
