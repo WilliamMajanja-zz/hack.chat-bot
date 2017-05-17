@@ -2,7 +2,8 @@
 
 This is a bot running on [hack.chat](https://hack.chat/) for general use and is meant to perform tasks quicker.
 
-![DuckDuckGo](images/ddg.png) The search feature of the bot uses [DuckDuckGo's API](https://duckduckgo.com/).
+<img src="images/ddg.png" alt="DuckDuckGo Logo" height="50" width="50"> The search feature of the bot uses 
+[DuckDuckGo's API](https://duckduckgo.com/).
 
 # Using the bot
 
@@ -29,7 +30,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
     - Windows: `python bot.py`
     - Linux: `python3 bot.py`
 
-![Commands](screenshot.png)
+![Commands](images/screenshot.png)
 
 # License
 
