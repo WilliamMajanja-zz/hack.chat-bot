@@ -15,12 +15,12 @@ from commands import currency, jokes, dictionary, katex, password, paste, poetry
 
 if not os.path.isfile("credentials.py"):
     with open("credentials.py", "w") as f:
-        print("You can change your credentials in the file credentials.py. The features whose API tokens you don't " +
-              "enter will remain inaccessible until you enter them.")
-        name = input("Enter the name of the bot (mandatory): ")
+        print("You can change your credentials later in the file credentials.py located in the src folder. The " +
+              "features whose API tokens you don't enter will remain inaccessible until you enter them.")
+        name = input("Enter the name of the bot (e.g., myBot) (mandatory): ")
         print("A trip code is a randomly generated code to verify a user regardless of their nickname.")
-        password = input("Enter the password for the trip code (optional): ")
-        channel = input("Enter which channel you would like to connect to (mandatory): ")
+        password = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
+        channel = input("Enter which channel you would like to connect to (e.g., math) (mandatory): ")
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
         oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
         oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
