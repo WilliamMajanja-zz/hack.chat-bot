@@ -116,8 +116,8 @@ def message_got(chat, message, sender):
         space = re.search(r"\s", message.strip())
         if space:
             txt = message[space.end():]
-            if "?" in txt or "{" in txt or "}" in txt:
-                chat.send_message("@{} KaTeX doesn't support \"?\", \"{\" and \"}\"".format(sender))
+            if "?" in txt or "{" in txt or "}" in txt or "\\" in txt or "_" in txt:
+                chat.send_message("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\""% sender)
             else:
                 colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
                 for color in colors:

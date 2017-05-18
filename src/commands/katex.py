@@ -13,7 +13,7 @@ def katex_generator(txt, size, color):
     color -- string; changes the color of <txt>
              values: "red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow", "" (empty string for white)
 
-    "{", "}" and "?" must be avoided in <txt> as KaTeX doesn't support them.
+    "?", "{", "}", "\" and "_" must be avoided in <txt> as KaTeX doesn't support them.
     """
 
     txt = " ".join(txt.split())
