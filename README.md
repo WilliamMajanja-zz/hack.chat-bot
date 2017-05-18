@@ -21,6 +21,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 ## Building
 
 1. Clone the repository: `git clone https://github.com/neelkamath/hack.chat-bot`
+1. Change the directory: `cd hack.chat-bot`
 1. Install the dependencies: `pip install -r requirements.txt`
 
 # Usage
