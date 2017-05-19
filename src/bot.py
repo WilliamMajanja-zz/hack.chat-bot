@@ -18,13 +18,19 @@ if not os.path.isfile("credentials.py"):
         print("You can change your credentials later in the file credentials.py located in the src folder. The " +
               "features whose API tokens you don't enter will remain inaccessible until you enter them.")
         name = input("Enter the name of the bot (e.g., myBot) (mandatory): ")
-        print("A trip code is a randomly generated code to verify a user regardless of their nickname.")
+        print("\nA trip code is a randomly generated code based on a password. Entering the same password gives the " +
+              "same trip code each time. This allows people in anonymous chatting sites to verify if a user is who " +
+              "they claim to be regardless of their nickname.")
         password = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
-        channel = input("Enter which channel you would like to connect to (e.g., math) (mandatory): ")
+        print("\nChannels are chats on https://hack.chat (e.g., to join https://hack.chat/?math, enter \"math\".)")
+        channel = input("Enter which channel you would like to connect to (mandatory): ")
+        print("\nFor the bot to know when it's being called, you must state a trigger.")
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
-        oxfordAppId = input("Enter the Oxford Dictionaries API app id (optional): ")
-        oxfordAppKey = input("Enter the Oxford Dictionaries API app key (optional): ")
-        exchangeRateApiKey = input("Enter the currency converter API key (optional): ")
+        oxfordAppId = input("\nEnter the Oxford Dictionaries API app id for definitions and translations (optional): ")
+        oxfordAppKey = input("Enter the Oxford Dictionaries API app key for definitions and translations (optional): ")
+        exchangeRateApiKey = input("\nEnter the currency converter API key (optional): ")
+        github = input("\nEnter the link to the GitHub repository this is on (optional): ")
+        print()
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
                 "password = \"{}\"\n".format(password) +
@@ -32,7 +38,8 @@ if not os.path.isfile("credentials.py"):
                 "trigger = \"{}\"\n".format(trigger) +
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
                 "oxfordAppKey = \"{}\"\n".format(oxfordAppKey) +
-                "exchangeRateApiKey = \"{}\"\n".format(exchangeRateApiKey))
+                "exchangeRateApiKey = \"{}\"\n".format(exchangeRateApiKey) +
+                "github = \"{}\"\n".format(github))
 
 import credentials
 
@@ -77,11 +84,9 @@ class ThreadChannels(threading.Thread):
 
 def message_got(chat, message, sender):
     """This is an impure function that checks messages on https://hack.chat and responds to ones triggering the bot."""
-    if message[:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger):
-        chat.send_message("@{} Creator: Neel Kamath https://github.com/neelkamath\n".format(sender) +
-                          "Code: https://github.com/neelkamath/hack.chat-bot\n" +
-                          "Language: Python\n" +
-                          "Website: https://neelkamath.github.io\n")
+    if (message[:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger) and
+        credentials.github):
+        chat.send_message("@{} {}".format(sender, credentials.github))
     elif (message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
           credentials.oxfordAppId and credentials.oxfordAppKey):
         space = re.search(r"\s", message.strip())
