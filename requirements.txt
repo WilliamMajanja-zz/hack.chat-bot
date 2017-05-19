@@ -1,2 +1,3 @@
 hackchat
 requests
+websocket-client
