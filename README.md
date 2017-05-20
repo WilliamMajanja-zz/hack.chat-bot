@@ -11,8 +11,8 @@ this channel if they go to that URL.
 
 # Using the bot
 
-If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on
-[?programming](https://hack.chat/?programming).
+If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on the
+[?programming](https://hack.chat/?programming) channel of the site.
 
 # Local install for developers
 
@@ -21,7 +21,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 - [Python 3 or higher](https://www.python.org/downloads/)
 - pip3
     - Windows: `python -m pip install -U pip setuptools`
-    - Linux: `pip install -U pip setuptools` prefixed with the system package manager keyword (e.g., `sudo` on macOS,
+    - Other: `pip install -U pip setuptools` prefixed with the system package manager keyword (e.g., `sudo` on macOS,
         `apt-get` etc.)
 - [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started) (optional)
 - [Currency Converter API tokens](https://www.exchangerate-api.com/) (optional)
