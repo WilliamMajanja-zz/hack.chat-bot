@@ -22,7 +22,8 @@ if not os.path.isfile("credentials.py"):
               "same trip code each time. This allows people in anonymous chatting sites to verify if a user is who " +
               "they claim to be regardless of their nickname.")
         password = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
-        print("\nChannels are chats on https://hack.chat (e.g., to join https://hack.chat/?math, enter \"math\".)")
+        print("\nChannels are chats on https://hack.chat. If the channel for the name you enter doesn't exist, one " +
+              "will automatically be created. To join the \"math\" channel (https://hack.chat/?math), enter \"math\".)")
         channel = input("Enter which channel you would like to connect to (mandatory): ")
         print("\nFor the bot to know when it's being called, you must state a trigger.")
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
@@ -77,7 +78,7 @@ class ThreadChannels(threading.Thread):
     def join_channel(self):
         """This function joins a channel on https://hack.chat."""
         chat = hackchat.HackChat(self.name + "#" + self.password, self.channel)
-        chat.on_message.append(self.func)
+        chat.on_message += [self.func]
         chat.start_ping_thread()
         chat.run_loop()
 

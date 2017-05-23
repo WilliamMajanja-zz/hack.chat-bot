@@ -19,10 +19,6 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 ## Prerequisites
 
 - [Python 3 or higher](https://www.python.org/downloads/)
-- pip3
-    - Windows: `python -m pip install -U pip setuptools`
-    - Other: `pip install -U pip setuptools` prefixed with the system package manager keyword (e.g., `sudo` on macOS,
-        `apt-get` etc.)
 - [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started) (optional)
 - [Currency Converter API tokens](https://www.exchangerate-api.com/) (optional)
 
@@ -34,7 +30,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help
 
 # Usage
 
-1. Change the directory: `cd hack.chat-bot/src`
+1. Change the directory: `cd src`
 1. Run the script.
     - Windows: `python bot.py`
     - Other: `python3 bot.py`
