@@ -18,16 +18,41 @@ class HackChat:
     Usage:
     Functions:
     send(msg) -- use the <send> function to send a message <msg> (string)
+    stats -- this sends a request for the number of unique IPs connected to channels on https://hack.chat. The result
+             of this function will be sent to the callback function(s).
     Properties:
     callbacks -- list of callback functions' names that will receive data
     onlineUsers -- list of users online
 
-    The data received by the callback function(s) will be a dictionary having one of the following forms:
-    {"nick": <the nickname of the sender>, "text": <what the sender sent>, "trip": <senders' tripcode if they have one>}
-    {"onlineAdd": <the nickname of the user who just joint the channel>}
-    {"onlineRemove": <the nickname of the user who just left the channel>}
-    {"invite": <the nickname of the person who invited you to a channel>, "channel": <name of channel invited to>}
-    {"warn": <an explanation of why you have been warned (e.g., the nickname you used is already taken)>}
+    The data received by the callback function(s) will be a dictionary having one of the following formats:
+    {
+        "type": "message",
+        "nick": <senders' nickname>,
+        "text": <senders' message>,
+        "trip": <senders' tripcode if the sender has one>
+    }
+    {
+        "type": "onlineAdd",
+        "nick": <nickname of user who just joint the channel>
+    }
+    {
+        "type": "onlineRemove",
+        "nick": <nickname of user who just left the channel>
+    }
+    {
+        "type": "invite",
+        "nick": <nickname of user who invited you to a channel>,
+        "channel": <name of the channel invited to>
+    }
+    {
+        "type": "stats",
+        "IPs": <number of unique IPs connected to https://hack.chat>,
+        "channels": <number of channels in use on https://hack.chat>
+    }
+    {
+        "type": "warn",
+        "warning": <explanation of why you have been warned (e.g., nickname you used is already taken)>
+    }
 
     Example:
     import connection # Import the module.
@@ -63,7 +88,7 @@ class HackChat:
         while True:
             result = json.loads(self._ws.recv())
             if result["cmd"] == "chat":
-                data = {"nick": result["nick"], "text": result["text"]}
+                data = {"type": "message", "nick": result["nick"], "text": result["text"]}
                 if "trip" in result:
                     data["trip"] = result["trip"]
                 for callback in self.callbacks:
@@ -73,22 +98,30 @@ class HackChat:
             elif result["cmd"] == "onlineAdd":
                 self.onlineUsers.append(result["nick"])
                 for callback in self.callbacks:
-                    callback(self, {"onlineAdd": result["nick"]})
+                    callback(self, {"type": "onlineAdd", "nick": result["nick"]})
             elif result["cmd"] == "onlineRemove":
                 self.onlineUsers.remove(result["nick"])
                 for callback in self.callbacks:
-                    callback(self, {"onlineRemove": result["nick"]})
-            elif result["cmd"] == "info":
+                    callback(self, {"type": "onlineRemove", "nick": result["nick"]})
+            elif result["cmd"] == "info" and " invited " in result["text"]:
                 space = re.search(r"\s", result["text"])
                 name = result["text"][:space.start()]
                 link = re.search("\?", result["text"])
                 channel = result["text"][link.end():]
                 for callback in self.callbacks:
-                    callback(self, {"invite": name, "channel": channel})
+                    callback(self, {"type": "invite", "nick": name, "channel": channel})
+            elif result["cmd"] == "info" and " IPs " in result["text"]:
+                data = result["text"].split()
+                for callback in self.callbacks:
+                    callback(self, {"type": "stats", "IPs": data[0], "channels": data[4]})
             elif result["cmd"] == "warn":
                 for callback in self.callbacks:
-                    callback(self, {"warn": result["text"]})
+                    callback(self, {"type": "warn", "warning": result["text"]})
 
     def send(self, msg):
         """Sends <msg> (string) on the channel connected."""
         self._ws.send(json.dumps({"cmd": "chat", "text": msg}))
+
+    def stats(self):
+        """Requests the statistics of connections on https://hack.chat."""
+        self._ws.send(json.dumps({"cmd": "stats"}))

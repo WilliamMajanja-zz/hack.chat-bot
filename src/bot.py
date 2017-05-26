@@ -77,11 +77,13 @@ class ThreadChannels(threading.Thread):
 
 def on_message(chat, info):
     """This is an impure callback function that receives and sends data to a channel on https://hack.chat."""
-    if "warn" in info:
-        print("\nWARNING: {}\n".format(info["warn"]))
-    if "invite" in info:
+    if info["type"] == "warn":
+        print("\nWARNING:\n{}\n".format(info["warn"]))
+    elif info["type"] == "invite":
         ThreadChannels(on_message, info["channel"], credentials.name, credentials.pwd).start()
-    if "nick" not in info:
+    elif info["type"] == "stats":
+        chat.send("There are {} unique IPs in {} channels.".format(info["IPs"], info["channels"]))
+    if info["type"] != "message":
         return
     if (info["text"][:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger) and
         credentials.github):
@@ -100,8 +102,8 @@ def on_message(chat, info):
     elif ((info["text"][:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
            len(info["text"].strip()) == len(credentials.trigger + "h")) or
           info["text"][:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
-        commands = ["about", "h", "help", "join", "joke", "katex", "poem", "poet", "password", "search", "toss",
-                    "urban"]
+        commands = ["about", "h", "help", "join", "joke", "katex", "poem", "poet", "password", "search", "stats",
+                    "toss", "urban"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
             commands += ["define", "translate"]
         if credentials.exchangeRateApiKey:
@@ -219,6 +221,8 @@ def on_message(chat, info):
             chat.send("@{} {}".format(info["nick"], reply if reply else "Sorry, I couldn't find anything."))
         else:
             chat.send("@{} instant answers (e.g., {}search pokemon black)".format(info["nick"], credentials.trigger))
+    elif info["text"][:len(credentials.trigger + "stats")].lower() == "{}stats".format(credentials.trigger):
+        chat.stats()
     elif info["text"][:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
         chat.send("@{} {}".format(info["nick"], "heads" if random.randint(0, 1) == 1 else "tails"))
     elif (info["text"][:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
