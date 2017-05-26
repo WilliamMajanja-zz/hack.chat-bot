@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import time
 import threading
 import websocket
@@ -25,6 +26,7 @@ class HackChat:
     {"nick": <the nickname of the sender>, "text": <what the sender sent>, "trip": <senders' tripcode if they have one>}
     {"onlineAdd": <the nickname of the user who just joint the channel>}
     {"onlineRemove": <the nickname of the user who just left the channel>}
+    {"invite": <the nickname of the person who invited you to a channel>, "channel": <name of channel invited to>}
     {"warn": <an explanation of why you have been warned (e.g., the nickname you used is already taken)>}
 
     Example:
@@ -76,6 +78,13 @@ class HackChat:
                 self.onlineUsers.remove(result["nick"])
                 for callback in self.callbacks:
                     callback(self, {"onlineRemove": result["nick"]})
+            elif result["cmd"] == "info":
+                space = re.search(r"\s", result["text"])
+                name = result["text"][:space.start()]
+                link = re.search("\?", result["text"])
+                channel = result["text"][link.end():]
+                for callback in self.callbacks:
+                    callback(self, {"invite": name, "channel": channel})
             elif result["cmd"] == "warn":
                 for callback in self.callbacks:
                     callback(self, {"warn": result["text"]})

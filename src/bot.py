@@ -79,6 +79,8 @@ def on_message(chat, info):
     """This is an impure callback function that receives and sends data to a channel on https://hack.chat."""
     if "warn" in info:
         print("\nWARNING: {}\n".format(info["warn"]))
+    if "invite" in info:
+        ThreadChannels(on_message, info["channel"], credentials.name, credentials.pwd).start()
     if "nick" not in info:
         return
     if (info["text"][:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger) and
@@ -111,7 +113,8 @@ def on_message(chat, info):
         if space:
             ThreadChannels(on_message, info["text"][space.end():], credentials.name, credentials.pwd).start()
         else:
-            chat.send("@{} joins a hack.chat channel (e.g., {}join botDev)".format(info["nick"], credentials.trigger))
+            chat.send("@{} joins a hack.chat channel (e.g., {}join math)\n".format(info["nick"], credentials.trigger) +
+                      "You can also invite the bot via the sidebar.")
     elif info["text"][:len(credentials.trigger + "joke")].lower() == "{}joke".format(credentials.trigger):
         chat.send("@{} {}".format(info["nick"], jokes.yo_momma()))
     elif info["text"][:len(credentials.trigger + "katex")].lower() == "{}katex".format(credentials.trigger):
