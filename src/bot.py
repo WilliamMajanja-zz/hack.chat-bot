@@ -3,14 +3,13 @@
 """This is used to connect the bot to https://hack.chat using credentials from the file credentials.py."""
 
 import datetime
-import random
-import threading
-import re
 import os.path
+import random
+import re
 import sys
+import threading
 
-import hackchat
-
+import connection
 from commands import currency, jokes, dictionary, katex, password, paste, poetry, search
 
 if not os.path.isfile("credentials.py"):
@@ -21,7 +20,7 @@ if not os.path.isfile("credentials.py"):
         print("\nA trip code is a randomly generated code based on a password. Entering the same password gives the " +
               "same trip code each time. This allows people in anonymous chatting sites to verify if a user is who " +
               "they claim to be regardless of their nickname.")
-        password = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
+        pwd = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
         print("\nChannels are chats on https://hack.chat. If the channel for the name you enter doesn't exist, one " +
               "will automatically be created. To join the \"math\" channel (https://hack.chat/?math), enter \"math\".)")
         channel = input("Enter which channel you would like to connect to (mandatory): ")
@@ -31,10 +30,9 @@ if not os.path.isfile("credentials.py"):
         oxfordAppKey = input("Enter the Oxford Dictionaries API app key for definitions and translations (optional): ")
         exchangeRateApiKey = input("\nEnter the currency converter API key (optional): ")
         github = input("\nEnter the link to the GitHub repository this is on (optional): ")
-        print()
         f.write("#!/usr/bin/env python3\n\n\n" +
                 "name = \"{}\"\n".format(name) +
-                "password = \"{}\"\n".format(password) +
+                "pwd = \"{}\"\n".format(pwd) +
                 "channel = \"{}\"\n".format(channel) +
                 "trigger = \"{}\"\n".format(trigger) +
                 "oxfordAppId = \"{}\"\n".format(oxfordAppId) +
@@ -50,58 +48,56 @@ random.seed(datetime.datetime.now())
 
 
 class ThreadChannels(threading.Thread):
-    """Joins a channel on https://hack.chat (e.g., https://hack.chat/?programming).
+    """This is an impure class that runs an instance of a bot on https://hack.chat.
 
     Keyword arguments:
-    func -- function; the name of the function to handle activities in the channel (e.g., <message_got>)
-    channel -- string; the name of the channel to connect to
-    name -- string; the nickname to be used upon entering the channel
-    password -- optional string; the password that gives a trip code to be used
+    func -- function; the name of the callback function to receive data from https://hack.chat
+    channel -- string; the channel to connect to
+    nick -- the nickname of the bot
+    pwd -- the password used to generate a tripcode on the site
 
-    Below is an example of how to use this class.
-    thread = ThreadChannels(message_got, "programming", "myBot", "secretPassword")
+    Example:
+    thread = ThreadChannels(on_message, "botDev", "myBot")
     thread.start()
     """
 
-    def __init__(self, func, channel, name, password = ""):
-        """This function initializes values."""
+    def __init__(self, func, channel, nick, pwd = ""):
+        """This function initializes the values."""
         threading.Thread.__init__(self)
         self.func = func
         self.channel = channel
-        self.name = name
-        self.password = password
+        self.nick = nick
+        self.pwd = pwd
 
     def run(self):
-        """This function joins the channel on a new thread."""
-        self.join_channel()
-
-    def join_channel(self):
-        """This function joins a channel on https://hack.chat."""
-        chat = hackchat.HackChat(self.name + "#" + self.password, self.channel)
-        chat.on_message += [self.func]
-        chat.start_ping_thread()
-        chat.run_loop()
+        """Accessing the <start> function in turn accesses this <run> function to start the thread."""
+        connector = connection.HackChat(self.channel, self.nick, self.pwd)
+        connector.callbacks.append(self.func)
 
 
-def message_got(chat, message, sender):
-    """This is an impure function that checks messages on https://hack.chat and responds to ones triggering the bot."""
-    if (message[:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger) and
+def on_message(chat, info):
+    """This is an impure callback function that receives and sends data to a channel on https://hack.chat."""
+    if "warn" in info:
+        print("\nWARNING: {}\n".format(info["warn"]))
+    if "nick" not in info:
+        return
+    if (info["text"][:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger) and
         credentials.github):
-        chat.send_message("@{} {}".format(sender, credentials.github))
-    elif (message[:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
+        chat.send("@{} {}".format(info["nick"], credentials.github))
+    elif (info["text"][:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger) and
           credentials.oxfordAppId and credentials.oxfordAppKey):
-        space = re.search(r"\s", message.strip())
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            data = oxfordDictionary.define(message[space.end():])
+            data = oxfordDictionary.define(info["text"][space.end():])
             if type(data) is str:
-                chat.send_message("@{} {}: {}".format(sender, message[space.end():], data))
+                chat.send("@{} {}: {}".format(info["nick"], info["text"][space.end():], data))
             else:
-                chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
+                chat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
         else:
-            chat.send_message("@{} e.g., {}define hello".format(sender, credentials.trigger))
-    elif ((message[:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
-           len(message.strip()) == len(credentials.trigger + "h")) or
-          message[:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
+            chat.send("@{} e.g., {}define hello".format(info["nick"], credentials.trigger))
+    elif ((info["text"][:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger) and
+           len(info["text"].strip()) == len(credentials.trigger + "h")) or
+          info["text"][:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
         commands = ["about", "h", "help", "join", "joke", "katex", "poem", "poet", "password", "search", "toss",
                     "urban"]
         if credentials.oxfordAppId and credentials.oxfordAppKey:
@@ -109,92 +105,95 @@ def message_got(chat, message, sender):
         if credentials.exchangeRateApiKey:
             commands.append("rate")
         reply = " {}".format(credentials.trigger).join(sorted(commands))
-        chat.send_message("@{} {}{}".format(sender, credentials.trigger, reply))
-    elif message[:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
+        chat.send("@{} {}{}".format(info["nick"], credentials.trigger, reply))
+    elif info["text"][:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            ThreadChannels(message_got, message[space.end():], credentials.name, credentials.password).start()
+            ThreadChannels(on_message, info["text"][space.end():], credentials.name, credentials.pwd).start()
         else:
-            chat.send_message("@{} joins a hack.chat channel (e.g., {}join botDev)".format(sender, credentials.trigger))
-    elif message[:len(credentials.trigger + "joke")].lower() == "{}joke".format(credentials.trigger):
-        chat.send_message("@{} {}".format(sender, jokes.yo_momma()))
-    elif message[:len(credentials.trigger + "katex")].lower() == "{}katex".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
+            chat.send("@{} joins a hack.chat channel (e.g., {}join botDev)".format(info["nick"], credentials.trigger))
+    elif info["text"][:len(credentials.trigger + "joke")].lower() == "{}joke".format(credentials.trigger):
+        chat.send("@{} {}".format(info["nick"], jokes.yo_momma()))
+    elif info["text"][:len(credentials.trigger + "katex")].lower() == "{}katex".format(credentials.trigger):
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            txt = message[space.end():]
+            txt = info["text"][space.end():]
             if "?" in txt or "{" in txt or "}" in txt or "\\" in txt or "_" in txt:
-                chat.send_message("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\""% sender)
+                chat.send("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\"" % info["nick"])
             else:
                 colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
                 for color in colors:
-                    if color in message[:space.start()]:
+                    if color in info["text"][:space.start()]:
                         break
                     else:
                         color = ""
                 sizes = ["tiny", "scriptsize", "footnotesize", "small", "normalsize", "large", "Large", "LARGE", "huge",
                          "Huge"]
                 for size in sizes:
-                    if size in message[:space.start()]:
+                    if size in info["text"][:space.start()]:
                         break
                     else:
                         size = ""
-                chat.send_message("@{} says {}".format(sender, katex.katex_generator(txt, size, color)))
+                chat.send("@{} says {}".format(info["nick"], katex.katex_generator(txt, size, color)))
         else:
-            chat.send_message("@{} stylizes text ".format(sender) +
+            chat.send("@{} stylizes text ".format(info["nick"]) +
                               "(e.g., {}katex.rainbow.large hello world)\n".format(credentials.trigger) +
                               "optional colors: \"red\", \"orange\", \"green\", \"blue\", \"pink\", \"purple\", " +
                               "\"gray\", \"rainbow\"\n" +
                               "optional sizes: \"tiny\", \"scriptsize\", \"footnotesize\", \"small\", " +
                               "\"normalsize\", \"large\", \"Large\", \"LARGE\", \"huge\", \"Huge\"")
-    elif message[:len(credentials.trigger + "password")].lower() == "{}password".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
+    elif info["text"][:len(credentials.trigger + "password")].lower() == "{}password".format(credentials.trigger):
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            chat.send_message("@{} {}".format(sender, password.strengthen_password(message[space.end():])))
+            chat.send("@{} {}".format(info["nick"], password.strengthen_password(info["text"][space.end():])))
         else:
-            chat.send_message("@{} strengthens a password (e.g., {}password test)".format(sender, credentials.trigger))
-    elif (message[:len(credentials.trigger + "poem")].lower() == "{}poem".format(credentials.trigger) or
-          message[:len(credentials.trigger + "poet")].lower() == "{}poet".format(credentials.trigger)):
-        space = re.search(r"\s", message.strip())
+            chat.send("@{} strengthens a password (e.g., {}password test)".format(info["nick"], credentials.trigger))
+    elif (info["text"][:len(credentials.trigger + "poem")].lower() == "{}poem".format(credentials.trigger) or
+          info["text"][:len(credentials.trigger + "poet")].lower() == "{}poet".format(credentials.trigger)):
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            isAuthor = True if message[len(credentials.trigger):len(credentials.trigger + "poet")] == "poet" else False
-            data = poetry.poems(message[space.end():], isAuthor)
+            if info["text"][len(credentials.trigger):len(credentials.trigger + "poet")] == "poet":
+                isAuthor = True
+            else:
+                isAuthor = False
+            data = poetry.poems(info["text"][space.end():], isAuthor)
             if data:
                 data = data[random.randint(0, len(data) - 1)]
                 poem = ""
                 for line in range(0, 3):
                     poem += data["poem"].split("\n")[line] + "\n"
                 pastedPoem = paste.dpaste(data["poem"], title = "{} by {}".format(data["title"], data["author"]))
-                chat.send_message("@{} {}\nBy: {}\n{}".format(sender, data["title"], data["author"], poem) +
+                chat.send("@{} {}\nBy: {}\n{}".format(info["nick"], data["title"], data["author"], poem) +
                                   "You can read the rest at {}".format(pastedPoem))
             else:
-                chat.send_message("@{} Sorry, I couldn't find any poems for that.".format(sender))
+                chat.send("@{} Sorry, I couldn't find any poems for that.".format(info["nick"]))
         else:
-            if message[len(credentials.trigger):len(credentials.trigger + "poem")].lower() == "poem":
-                chat.send_message("@{} finds a poem by its name ".format(sender) +
+            if info["text"][len(credentials.trigger):len(credentials.trigger + "poem")].lower() == "poem":
+                chat.send("@{} finds a poem by its name ".format(info["nick"]) +
                                   "(e.g., {}poem daffodils)".format(credentials.trigger))
-            elif message[len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
-                chat.send_message("@{} finds a poem from a poet ".format(sender) +
+            elif info["text"][len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
+                chat.send("@{} finds a poem from a poet ".format(info["nick"]) +
                                   "(e.g., {}poet shakespeare)".format(credentials.trigger))
-    elif (message[:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger) and
+    elif (info["text"][:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger) and
           credentials.exchangeRateApiKey):
         converted = False
-        if len(re.findall(":", message)) == 2:
-            firstColon = re.search(":", message)
-            secondColon = re.search(":", message[firstColon.end():])
-            fromCode = message[firstColon.end():firstColon.end() + secondColon.start()]
-            toCode = message[firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
+        if len(re.findall(":", info["text"])) == 2:
+            firstColon = re.search(":", info["text"])
+            secondColon = re.search(":", info["text"][firstColon.end():])
+            fromCode = info["text"][firstColon.end():firstColon.end() + secondColon.start()]
+            toCode = info["text"][firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
             if fromCode and toCode:
                 rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
                 if type(rate) is float:
                     converted = True
-                    chat.send_message("@{} 1 {} = {} {}".format(sender, fromCode.upper(), rate, toCode.upper()))
+                    chat.send("@{} 1 {} = {} {}".format(info["nick"], fromCode.upper(), rate, toCode.upper()))
         if not converted:
-            chat.send_message("@{} Sorry, I couldn't convert that. ".format(sender) +
+            chat.send("@{} Sorry, I couldn't convert that. ".format(info["nick"]) +
                               "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
-    elif message[:len(credentials.trigger + "search")].lower() == "{}search".format(credentials.trigger):
-        space = re.search(r"\s", message)
+    elif info["text"][:len(credentials.trigger + "search")].lower() == "{}search".format(credentials.trigger):
+        space = re.search(r"\s", info["text"])
         if space:
-            results = search.duckduckgo(message[space.end():], "hack.chat bot")
+            results = search.duckduckgo(info["text"][space.end():], "hack.chat bot")
             reply = ""
             if "Answer" in results or "AbstractText" in results:
                 if "URL" in results:
@@ -214,12 +213,12 @@ def message_got(chat, message, sender):
                         reply += modified
                         break
                     modified += "{}. ".format(sentence)
-            chat.send_message("@{} {}".format(sender, reply if reply else "Sorry, I couldn't find anything."))
+            chat.send("@{} {}".format(info["nick"], reply if reply else "Sorry, I couldn't find anything."))
         else:
-            chat.send_message("@{} instant answers (e.g., {}search pokemon black)".format(sender, credentials.trigger))
-    elif message[:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
-        chat.send_message("@{} {}".format(sender, "heads" if random.randint(0, 1) == 1 else "tails"))
-    elif (message[:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
+            chat.send("@{} instant answers (e.g., {}search pokemon black)".format(info["nick"], credentials.trigger))
+    elif info["text"][:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
+        chat.send("@{} {}".format(info["nick"], "heads" if random.randint(0, 1) == 1 else "tails"))
+    elif (info["text"][:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger) and
           credentials.oxfordAppId and credentials.oxfordAppKey):
         languages = {"en": "english",
                      "es": "spanish",
@@ -229,10 +228,10 @@ def message_got(chat, message, sender):
                      "zu": "zulu",
                      "id": "indonesian",
                      "tn": "tswana"}
-        space = re.search(r"\s", message.strip())
+        space = re.search(r"\s", info["text"].strip())
         translatable = True
-        if space and len(re.findall(":", message[:space.start()])) == 2:
-            cmd = message[:space.start()]
+        if space and len(re.findall(":", info["text"][:space.start()])) == 2:
+            cmd = info["text"][:space.start()]
             firstColon = re.search(":", cmd)
             secondColon = re.search(":", cmd[firstColon.end():])
             srcLang = cmd[firstColon.end():firstColon.end() + secondColon.start()].lower()
@@ -243,7 +242,7 @@ def message_got(chat, message, sender):
                         srcLang = language
                     if targetLang == languages[language]:
                         targetLang = language
-                words = message[space.end():].split()
+                words = info["text"][space.end():].split()
                 translations = []
                 for word in words:
                     lastChar = word[len(word) - 1:]
@@ -256,21 +255,21 @@ def message_got(chat, message, sender):
                         break
                     translations.append(word + lastChar)
                 if translations:
-                    chat.send_message("@{} {}".format(sender, " ".join(translations)))
+                    chat.send("@{} {}".format(info["nick"], " ".join(translations)))
                 else:
-                    chat.send_message("@{} Sorry, I couldn't translate all of that.".format(sender))
+                    chat.send("@{} Sorry, I couldn't translate all of that.".format(info["nick"]))
             else:
                 translatable = False
         else:
             translatable = False
         if not translatable:
-            chat.send_message("@{} supported languages: {}\n".format(sender, ", ".join(languages.values())) +
+            chat.send("@{} supported languages: {}\n".format(info["nick"], ", ".join(languages.values())) +
                               "e.g., {}translate:english:spanish I have a holiday!\n".format(credentials.trigger) +
                               "will translate from from English to Spanish")
-    elif message[:len(credentials.trigger + "urban")].lower() == "{}urban".format(credentials.trigger):
-        space = re.search(r"\s", message.strip())
+    elif info["text"][:len(credentials.trigger + "urban")].lower() == "{}urban".format(credentials.trigger):
+        space = re.search(r"\s", info["text"].strip())
         if space:
-            data = dictionary.urban_dictionary(message[space.end():])
+            data = dictionary.urban_dictionary(info["text"][space.end():])
             if data:
                 words = data["definition"].split()
                 definition = ""
@@ -279,14 +278,14 @@ def message_got(chat, message, sender):
                     definition += word + " "
                     if len(definition) > 80 * 6:
                         break
-                chat.send_message("@{} {}: {} {}".format(sender, data["word"], definition, data["permalink"]))
+                chat.send("@{} {}: {} {}".format(info["nick"], data["word"], definition, data["permalink"]))
             else:
-                chat.send_message("@{} Sorry, I couldn't find any definitions for that.".format(sender))
+                chat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
         else:
-            chat.send_message("@{} searches Urban Dictionary (e.g., {}urban swag)".format(sender, credentials.trigger))
+            chat.send("@{} searches Urban Dictionary (e.g., {}urban swag)".format(info["nick"], credentials.trigger))
 
 
 if __name__ == "__main__":
-    ThreadChannels(message_got, credentials.channel, credentials.name, credentials.password).start()
     oxfordDictionary = dictionary.OxfordDictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
-    print("The bot has started.")
+    ThreadChannels(on_message, credentials.channel, credentials.name, credentials.pwd).start()
+    print("\nThe bot has started.")
