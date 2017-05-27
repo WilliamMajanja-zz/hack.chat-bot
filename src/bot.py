@@ -3,6 +3,7 @@
 """This is used to connect the bot to https://hack.chat using credentials from the file credentials.py."""
 
 import datetime
+import getpass
 import os.path
 import random
 import re
@@ -20,7 +21,7 @@ if not os.path.isfile("credentials.py"):
         print("\nA trip code is a randomly generated code based on a password. Entering the same password gives the " +
               "same trip code each time. This allows people in anonymous chatting sites to verify if a user is who " +
               "they claim to be regardless of their nickname.")
-        pwd = input("Enter the password for the trip code (e.g., myPassword) (optional): ")
+        pwd = getpass.getpass("Enter the password for the trip code (e.g., myPassword) (optional): ")
         print("\nChannels are chats on https://hack.chat. If the channel for the name you enter doesn't exist, one " +
               "will automatically be created. To join the \"math\" channel (https://hack.chat/?math), enter \"math\".)")
         channel = input("Enter which channel you would like to connect to (mandatory): ")
