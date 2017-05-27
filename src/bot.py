@@ -51,7 +51,7 @@ class ThreadChannels(threading.Thread):
     """This is an impure class that runs an instance of a bot on https://hack.chat.
 
     Keyword arguments:
-    func -- function; the name of the callback function to receive data from https://hack.chat
+    callback -- function; the name of the callback function to receive data from https://hack.chat
     channel -- string; the channel to connect to
     nick -- the nickname of the bot
     pwd -- the password used to generate a tripcode on the site
@@ -61,24 +61,23 @@ class ThreadChannels(threading.Thread):
     thread.start()
     """
 
-    def __init__(self, func, channel, nick, pwd = ""):
+    def __init__(self, callback, channel, nick, pwd = ""):
         """This function initializes the values."""
         threading.Thread.__init__(self)
-        self.func = func
+        self.callback = callback
         self.channel = channel
         self.nick = nick
         self.pwd = pwd
 
     def run(self):
         """Accessing the <start> function in turn accesses this <run> function to start the thread."""
-        connector = connection.HackChat(self.channel, self.nick, self.pwd)
-        connector.callbacks.append(self.func)
+        connector = connection.HackChat(self.callback, self.channel, self.nick, self.pwd)
 
 
 def on_message(chat, info):
     """This is an impure callback function that receives and sends data to a channel on https://hack.chat."""
     if info["type"] == "warn":
-        print("\nWARNING:\n{}\n".format(info["warn"]))
+        print("\nWARNING:\n{}\n".format(info["warning"]))
     elif info["type"] == "invite":
         ThreadChannels(on_message, info["channel"], credentials.name, credentials.pwd).start()
     elif info["type"] == "stats":
