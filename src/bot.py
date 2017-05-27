@@ -21,7 +21,8 @@ if not os.path.isfile("credentials.py"):
         print("\nA trip code is a randomly generated code based on a password. Entering the same password gives the " +
               "same trip code each time. This allows people in anonymous chatting sites to verify if a user is who " +
               "they claim to be regardless of their nickname.")
-        pwd = getpass.getpass("Enter the password for the trip code (e.g., myPassword) (optional): ")
+        pwd = getpass.getpass("For privacy, the password will not be shown on the screen when you're typing. "
+                              + "Enter the password for the trip code (e.g., myPassword) (optional): ")
         print("\nChannels are chats on https://hack.chat. If the channel for the name you enter doesn't exist, one " +
               "will automatically be created. To join the \"math\" channel (https://hack.chat/?math), enter \"math\".)")
         channel = input("Enter which channel you would like to connect to (mandatory): ")

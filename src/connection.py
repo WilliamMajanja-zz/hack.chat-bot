@@ -35,7 +35,7 @@ class HackChat:
     }
     {
         "type": "invite",
-        "nick": <nickname of user who invited you to a channel>,
+        "nick": <nickname of user who invited you to a channel (might be your own if you invited someone else)>,
         "channel": <name of the channel invited to>
     }
     {
@@ -94,8 +94,11 @@ class HackChat:
                 self.onlineUsers.remove(result["nick"])
                 self.callback(self, {"type": "onlineRemove", "nick": result["nick"]})
             elif result["cmd"] == "info" and " invited " in result["text"]:
-                space = re.search(r"\s", result["text"])
-                name = result["text"][:space.start()]
+                if "You invited " in result["text"]:
+                    name = self.nick
+                else:
+                    space = re.search(r"\s", result["text"])
+                    name = result["text"][:space.start()]
                 link = re.search("\?", result["text"])
                 channel = result["text"][link.end():]
                 self.callback(self, {"type": "invite", "nick": name, "channel": channel})
@@ -108,6 +111,14 @@ class HackChat:
     def send(self, msg):
         """Use this to send a message <msg> (string) to the channel connected."""
         self._ws.send(json.dumps({"cmd": "chat", "text": msg}))
+
+    def invite(self, nick):
+        """This sends an invite to the person <nick> (string) to join a randomly generated channel.
+
+        This invite will only be visible to <nick>. The callback function will receive the data such as the channel.
+        """
+
+        self._ws.send(json.dumps({"cmd": "invite", "nick": nick}))
 
     def stats(self):
         """This sends the number of unique IPs and channels on https://hack.chat to the callback function."""
