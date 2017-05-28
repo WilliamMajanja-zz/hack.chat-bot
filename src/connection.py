@@ -49,13 +49,18 @@ class HackChat:
     }
 
     Example:
-    import connection # Import the module.
-    def on_message(connector, data): # Make a callback function with two parameters.
-        print(data) # The second parameter (<data>) is the data received.
-        print(connector.onlineUsers) # Print a list of the users currently online.
-        if "onlineAdd" in data: # Check if someone joined the channel.
-            connector.send("Hello {}".format(data["onlineAdd"])) # Greet anyone entering the channel.
-    chat = connection.HackChat(on_message, "bottest", "myBot") # Connect the bot.
+        import connection
+
+
+        def on_message(connector, data): # Make a callback function with two parameters.
+            print(data) # The second parameter (<data>) is the data received.
+            print(connector.onlineUsers)
+            if "onlineAdd" in data: # Check if someone joined the channel.
+                connector.send("Hello {}".format(data["onlineAdd"])) # Greet the person joining the channel.
+
+
+        if __name__ == "__main__":
+            connection.HackChat(on_message, "bottest", "myBot")
     """
 
     def __init__(self, callback, channel, nick, pwd = ""):
