@@ -125,9 +125,15 @@ def callback(hackChat, info):
         space = re.search(r"\s", info["text"].strip())
         colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
         sizes = ["tiny", "scriptsize", "footnotesize", "small", "normalsize", "large", "Large", "LARGE", "huge", "Huge"]
+        fonts = ["mathrm", "mathit", "mathbf", "mathsf", "mathtt", "mathbb", "mathcal", "mathfrak", "mathscr"]
         if space:
             txt = info["text"][space.end():]
-            if "?" in txt or "{" in txt or "}" in txt or "\\" in txt or "_" in txt:
+            disallowed = ("#", "$", "%", "&", "_", "{", "}", "\\", "?")
+            invalid = False
+            for char in disallowed:
+                if char in txt:
+                    invalid = True
+            if invalid:
                 hackChat.send("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\"" % info["nick"])
             else:
                 for color in colors:
@@ -140,11 +146,18 @@ def callback(hackChat, info):
                         break
                     else:
                         size = ""
-                hackChat.send("@{} says {}".format(info["nick"], katex.katex_generator(txt, size, color)))
+                for font in fonts:
+                    if font in info["text"][:space.start()]:
+                        break
+                    else:
+                        font = ""
+                hackChat.send("@{} says {}".format(info["nick"], katex.katex_generator(txt, size, color, font)))
         else:
             reply = "@{} stylizes text (e.g., {}katex.rainbow.huge hello)\n".format(info["nick"], credentials.trigger)
-            reply += "OPTIONAL COLORS: \"" + "\", \"".join(colors) + "\"\n"
-            reply += "OPTIONAL SIZES: \"" + "\", \"".join(sizes) + "\""
+            optional = lambda x: "\", \"".join(x)
+            reply += "OPTIONAL COLORS: \"{}\"\n".format(optional(colors))
+            reply += "OPTIONAL SIZES: \"{}\"\n".format(optional(sizes))
+            reply += "OPTIONAL FONTS: \"{}\"\n".format(optional(fonts))
             hackChat.send(reply)
     elif info["text"][:len(credentials.trigger + "password")].lower() == "{}password".format(credentials.trigger):
         space = re.search(r"\s", info["text"].strip())
