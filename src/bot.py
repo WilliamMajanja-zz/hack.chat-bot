@@ -76,19 +76,19 @@ class ThreadHackChat(threading.Thread):
         connector = connection.HackChat(self.callback, self.channel, self.nick, self.pwd)
 
 
-def callback(chat, info):
+def callback(hackChat, info):
     """This is an impure callback function that receives and sends data from and to https://hack.chat."""
     if info["type"] == "warn":
         print("\nWARNING:\n{}\n".format(info["warning"]))
     elif info["type"] == "invite":
         ThreadHackChat(callback, info["channel"], credentials.name, credentials.pwd).start()
     elif info["type"] == "stats":
-        chat.send("There are {} unique IPs in {} channels.".format(info["IPs"], info["channels"]))
+        hackChat.send("There are {} unique IPs in {} channels.".format(info["IPs"], info["channels"]))
     if info["type"] != "message":
         return
     if (info["text"][:len(credentials.trigger + "about")].lower() == "{}about".format(credentials.trigger)
         and credentials.github):
-        chat.send("@{} {}".format(info["nick"], credentials.github))
+        hackChat.send("@{} {}".format(info["nick"], credentials.github))
     elif (info["text"][:len(credentials.trigger + "define")].lower() == "{}define".format(credentials.trigger)
           and credentials.oxfordAppId
           and credentials.oxfordAppKey):
@@ -96,11 +96,11 @@ def callback(chat, info):
         if space:
             data = oxfordDictionary.define(info["text"][space.end():])
             if type(data) is str:
-                chat.send("@{} {}: {}".format(info["nick"], info["text"][space.end():], data))
+                hackChat.send("@{} {}: {}".format(info["nick"], info["text"][space.end():], data))
             else:
-                chat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
+                hackChat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
         else:
-            chat.send("@{} e.g., {}define hello".format(info["nick"], credentials.trigger))
+            hackChat.send("@{} e.g., {}define hello".format(info["nick"], credentials.trigger))
     elif ((info["text"][:len(credentials.trigger + "h")].lower() == "{}h".format(credentials.trigger)
            and len(info["text"].strip()) == len(credentials.trigger + "h"))
           or info["text"][:len(credentials.trigger + "help")].lower() == "{}help".format(credentials.trigger)):
@@ -111,16 +111,16 @@ def callback(chat, info):
         if credentials.exchangeRateApiKey:
             commands.append("rate")
         reply = " {}".format(credentials.trigger).join(sorted(commands))
-        chat.send("@{} {}{}".format(info["nick"], credentials.trigger, reply))
+        hackChat.send("@{} {}{}".format(info["nick"], credentials.trigger, reply))
     elif info["text"][:len(credentials.trigger + "join")].lower() == "{}join".format(credentials.trigger):
         space = re.search(r"\s", info["text"].strip())
         if space:
             ThreadHackChat(callback, info["text"][space.end():], credentials.name, credentials.pwd).start()
         else:
-            chat.send("@{} joins a hack.chat channel (e.g., {}join math)\n".format(info["nick"], credentials.trigger)
+            hackChat.send("@{} joins a hack.chat channel (e.g., {}join math)\n".format(info["nick"], credentials.trigger)
                       + "You can also invite the bot via the sidebar.")
     elif info["text"][:len(credentials.trigger + "joke")].lower() == "{}joke".format(credentials.trigger):
-        chat.send("@{} {}".format(info["nick"], jokes.yo_momma()))
+        hackChat.send("@{} {}".format(info["nick"], jokes.yo_momma()))
     elif info["text"][:len(credentials.trigger + "katex")].lower() == "{}katex".format(credentials.trigger):
         space = re.search(r"\s", info["text"].strip())
         colors = ["red", "orange", "green", "blue", "pink", "purple", "gray", "rainbow"]
@@ -128,7 +128,7 @@ def callback(chat, info):
         if space:
             txt = info["text"][space.end():]
             if "?" in txt or "{" in txt or "}" in txt or "\\" in txt or "_" in txt:
-                chat.send("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\"" % info["nick"])
+                hackChat.send("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\"" % info["nick"])
             else:
                 for color in colors:
                     if color in info["text"][:space.start()]:
@@ -140,18 +140,18 @@ def callback(chat, info):
                         break
                     else:
                         size = ""
-                chat.send("@{} says {}".format(info["nick"], katex.katex_generator(txt, size, color)))
+                hackChat.send("@{} says {}".format(info["nick"], katex.katex_generator(txt, size, color)))
         else:
             reply = "@{} stylizes text (e.g., {}katex.rainbow.huge hello)\n".format(info["nick"], credentials.trigger)
             reply += "OPTIONAL COLORS: \"" + "\", \"".join(colors) + "\"\n"
             reply += "OPTIONAL SIZES: \"" + "\", \"".join(sizes) + "\""
-            chat.send(reply)
+            hackChat.send(reply)
     elif info["text"][:len(credentials.trigger + "password")].lower() == "{}password".format(credentials.trigger):
         space = re.search(r"\s", info["text"].strip())
         if space:
-            chat.send("@{} {}".format(info["nick"], password.strengthen_password(info["text"][space.end():])))
+            hackChat.send("@{} {}".format(info["nick"], password.strengthen_password(info["text"][space.end():])))
         else:
-            chat.send("@{} strengthens a password (e.g., {}password test)".format(info["nick"], credentials.trigger))
+            hackChat.send("@{} strengthens a password (e.g., {}password test)".format(info["nick"], credentials.trigger))
     elif (info["text"][:len(credentials.trigger + "poem")].lower() == "{}poem".format(credentials.trigger)
           or info["text"][:len(credentials.trigger + "poet")].lower() == "{}poet".format(credentials.trigger)):
         space = re.search(r"\s", info["text"].strip())
@@ -167,16 +167,16 @@ def callback(chat, info):
                 for line in range(0, 3):
                     poem += data["poem"].split("\n")[line] + "\n"
                 pastedPoem = paste.dpaste(data["poem"], title = "{} by {}".format(data["title"], data["author"]))
-                chat.send("@{} {}\nBy: {}\n{}".format(info["nick"], data["title"], data["author"], poem)
+                hackChat.send("@{} {}\nBy: {}\n{}".format(info["nick"], data["title"], data["author"], poem)
                           + "You can read the rest at {}".format(pastedPoem))
             else:
-                chat.send("@{} Sorry, I couldn't find any poems for that.".format(info["nick"]))
+                hackChat.send("@{} Sorry, I couldn't find any poems for that.".format(info["nick"]))
         else:
             if info["text"][len(credentials.trigger):len(credentials.trigger + "poem")].lower() == "poem":
-                chat.send("@{} finds a poem by its name ".format(info["nick"])
+                hackChat.send("@{} finds a poem by its name ".format(info["nick"])
                           + "(e.g., {}poem daffodils)".format(credentials.trigger))
             elif info["text"][len(credentials.trigger):len(credentials.trigger + "poet")].lower() == "poet":
-                chat.send("@{} finds a poem from a poet ".format(info["nick"])
+                hackChat.send("@{} finds a poem from a poet ".format(info["nick"])
                           + "(e.g., {}poet shakespeare)".format(credentials.trigger))
     elif (info["text"][:len(credentials.trigger + "rate")].lower() == "{}rate".format(credentials.trigger)
           and credentials.exchangeRateApiKey):
@@ -190,9 +190,9 @@ def callback(chat, info):
                 rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
                 if type(rate) is float:
                     converted = True
-                    chat.send("@{} 1 {} = {} {}".format(info["nick"], fromCode.upper(), rate, toCode.upper()))
+                    hackChat.send("@{} 1 {} = {} {}".format(info["nick"], fromCode.upper(), rate, toCode.upper()))
         if not converted:
-            chat.send("@{} Sorry, I couldn't convert that. ".format(info["nick"])
+            hackChat.send("@{} Sorry, I couldn't convert that. ".format(info["nick"])
                       + "(e.g., {}rate:usd:inr gives 1 USD = 64 INR)".format(credentials.trigger))
     elif info["text"][:len(credentials.trigger + "search")].lower() == "{}search".format(credentials.trigger):
         space = re.search(r"\s", info["text"])
@@ -217,13 +217,13 @@ def callback(chat, info):
                         reply += modified
                         break
                     modified += "{}. ".format(sentence)
-            chat.send("@{} {}".format(info["nick"], reply if reply else "Sorry, I couldn't find anything."))
+            hackChat.send("@{} {}".format(info["nick"], reply if reply else "Sorry, I couldn't find anything."))
         else:
-            chat.send("@{} instant answers (e.g., {}search pokemon black)".format(info["nick"], credentials.trigger))
+            hackChat.send("@{} instant answers (e.g., {}search pokemon black)".format(info["nick"], credentials.trigger))
     elif info["text"][:len(credentials.trigger + "stats")].lower() == "{}stats".format(credentials.trigger):
-        chat.stats()
+        hackChat.stats()
     elif info["text"][:len(credentials.trigger + "toss")].lower() == "{}toss".format(credentials.trigger):
-        chat.send("@{} {}".format(info["nick"], "heads" if random.randint(0, 1) == 1 else "tails"))
+        hackChat.send("@{} {}".format(info["nick"], "heads" if random.randint(0, 1) == 1 else "tails"))
     elif (info["text"][:len(credentials.trigger + "translate")].lower() == "{}translate".format(credentials.trigger)
           and credentials.oxfordAppId and credentials.oxfordAppKey):
         languages = {"en": "english",
@@ -261,15 +261,15 @@ def callback(chat, info):
                         break
                     translations.append(word + lastChar)
                 if translations:
-                    chat.send("@{} {}".format(info["nick"], " ".join(translations)))
+                    hackChat.send("@{} {}".format(info["nick"], " ".join(translations)))
                 else:
-                    chat.send("@{} Sorry, I couldn't translate all of that.".format(info["nick"]))
+                    hackChat.send("@{} Sorry, I couldn't translate all of that.".format(info["nick"]))
             else:
                 translatable = False
         else:
             translatable = False
         if not translatable:
-            chat.send("@{} supported languages: {}\n".format(info["nick"], ", ".join(languages.values()))
+            hackChat.send("@{} supported languages: {}\n".format(info["nick"], ", ".join(languages.values()))
                       + "e.g., {}translate:english:spanish I have a holiday!\n".format(credentials.trigger)
                       + "will translate from from English to Spanish")
     elif info["text"][:len(credentials.trigger + "urban")].lower() == "{}urban".format(credentials.trigger):
@@ -284,11 +284,11 @@ def callback(chat, info):
                     definition += word + " "
                     if len(definition) > 80 * 6:
                         break
-                chat.send("@{} {}: {} {}".format(info["nick"], data["word"], definition, data["permalink"]))
+                hackChat.send("@{} {}: {} {}".format(info["nick"], data["word"], definition, data["permalink"]))
             else:
-                chat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
+                hackChat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
         else:
-            chat.send("@{} searches Urban Dictionary (e.g., {}urban swag)".format(info["nick"], credentials.trigger))
+            hackChat.send("@{} searches Urban Dictionary (e.g., {}urban swag)".format(info["nick"], credentials.trigger))
 
 
 if __name__ == "__main__":

@@ -98,7 +98,6 @@ class HackChat:
         """This function sends and receives data from https://hack.chat to the callback function."""
         while True:
             result = json.loads(self._ws.recv())
-            print("\nPRINTED:\n{}\n".format(result))
             if result["cmd"] == "chat":
                 data = {"type": "message", "nick": result["nick"], "text": result["text"]}
                 if "trip" in result:
