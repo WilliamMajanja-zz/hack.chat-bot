@@ -184,7 +184,7 @@ class HackChat:
     def ban(self, nick):
         """Bans the user <nick> (string) from https://hack.chat for 24 hours.
 
-        You must be a moderator or admin to perform this action. You cannot ban a moderator or admin.
+        <pwd> must be that of a moderators' or admins'. You cannot ban a moderator or admin.
         The callback function will receive data as a result having one of the following formats:
         {
             "type": "warn",
@@ -200,7 +200,7 @@ class HackChat:
         self._ws.send(json.dumps({"cmd": "ban", "nick": nick}))
 
     def unban(self, ip):
-        """Unbans the user having the IP <ip> (string) (you must be a moderator or admin to perform this action).
+        """Unbans the user having the IP <ip> (string) (<pwd> must be that of a moderators' or admins').
 
         The callback function will receive data as a result if <nick> was unbanned having the following format.
         {
@@ -212,7 +212,7 @@ class HackChat:
         self._ws.send(json.dumps({"cmd": "unban", "nick": nick}))
 
     def list_users(self):
-        """This lists the users (requires you to be an admin).
+        """This lists the users (<pwd> must be that of an admins').
 
         This sends data of the form {"type": "list users", "text": <online users>} to the callback function.
         """
@@ -220,7 +220,7 @@ class HackChat:
         self._ws.send(json.dumps({"cmd": "listUsers"}))
 
     def broadcast(self, text):
-        """If you're an admin, you can send <text> (string) to https://hack.chat with this function.
+        """Sends <text> (string) to https://hack.chat with this function (<pwd> must be that of an admins').
 
         The following data will be sent to the callback function.
         {

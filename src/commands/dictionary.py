@@ -6,7 +6,7 @@ import requests
 import json
 
 
-class OxfordDictionary():
+class Oxford():
     """Uses the Oxford Dictionaries API for language tools such as definitions and translations.
 
     Keyword arguments:
@@ -87,7 +87,7 @@ class OxfordDictionary():
             return
 
 
-def urban_dictionary(search):
+def urban(search):
     """Returns a definition from Urban Dictionary using <search>.
 
     Return values:

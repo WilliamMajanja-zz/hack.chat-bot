@@ -288,7 +288,7 @@ def callback(hackChat, info):
     elif info["text"][:len(credentials.trigger + "urban")].lower() == "{}urban".format(credentials.trigger):
         space = re.search(r"\s", info["text"].strip())
         if space:
-            data = dictionary.urban_dictionary(info["text"][space.end():])
+            data = dictionary.urban(info["text"][space.end():])
             if data:
                 words = data["definition"].split()
                 definition = ""
@@ -305,6 +305,6 @@ def callback(hackChat, info):
 
 
 if __name__ == "__main__":
-    oxfordDictionary = dictionary.OxfordDictionary(credentials.oxfordAppId, credentials.oxfordAppKey)
+    oxfordDictionary = dictionary.Oxford(credentials.oxfordAppId, credentials.oxfordAppKey)
     ThreadHackChat(callback, credentials.channel, credentials.name, credentials.pwd).start()
     print("\nThe bot has started.")
