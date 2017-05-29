@@ -19,7 +19,7 @@ class HackChat:
     Usage:
     Access the <onlineUsers> property to get a list of the users currently online in the channel.
     Data received by the callback function will have one of the following formats. More formats exist but those are
-    exclusive to the functions in this class accessed by you.
+    exclusive to the functions in this class accessed by you. All data returned will be of type string.
     {
         "type": "message",
         "nick": <senders' nickname>,

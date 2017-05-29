@@ -6,7 +6,7 @@ import string
 import datetime
 
 
-def strengthen_password(pwd, spChars = True):
+def strengthen(pwd, spChars = True):
     """Returns a strengthened password.
 
     Keyword arguments:
