@@ -10,11 +10,6 @@ import websocket
 class HackChat:
     """This class receives and sends data from and to https://hack.chat.
 
-    Keyword arguments:
-    callback -- function; the name of the function to receive data from https://hack.chat
-    nick -- string; the nickname to use upon connecting
-    pwd -- string; the password that generates you a tripcode upon entering
-
     Usage:
     Access the <onlineUsers> property to get a list of the users currently online in the channel.
     Data received by the callback function will have one of the following formats. More formats exist but those are
@@ -76,13 +71,21 @@ class HackChat:
             hackChat.join("botDev")
     """
 
-    def __init__(self, callback, nick, pwd = ""):
-        """This function initializes values."""
+    def __init__(self, callback, nick, pwd = "", url = "wss://hack.chat/chat-ws"):
+        """Initializes values.
+
+        Keyword arguments:
+        callback -- function; the name of the function to receive data from https://hack.chat
+        nick -- string; the nickname to use upon connecting
+        pwd -- string; the password that generates you a tripcode upon entering
+        url -- string; the hack.chat instance
+        """
         self.callback = callback
         self.nick = nick
         self.pwd = pwd
+        self.url = url
         self.onlineUsers = []
-        self._ws = websocket.create_connection("wss://hack.chat/chat-ws")
+        self._ws = websocket.create_connection(url)
         threading.Thread(target = self._ping).start()
         threading.Thread(target = self._run).start()
 
@@ -96,13 +99,17 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "join", "channel": channel, "nick": "{}#{}".format(self.nick, self.pwd)}))
+        self._send_packet({"cmd": "join", "channel": channel, "nick": "{}#{}".format(self.nick, self.pwd)})
+
+    def _send_packet(self, data):
+        """Sends <data> (dict) to https://hack.chat."""
+        self._ws.send(json.dumps(data))
 
     def _ping(self):
         """This function periodically pings the server to retain the websocket connection."""
         while True:
             time.sleep(60)
-            self._ws.send(json.dumps({"cmd": "ping"}))
+            self._send_packet({"cmd": "ping"})
 
     def _run(self):
         """This function sends and receives data from https://hack.chat to the callback function."""
@@ -159,7 +166,7 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "chat", "text": msg}))
+        self._send_packet({"cmd": "chat", "text": msg})
 
     def invite(self, nick):
         """This sends an invite to the person <nick> (string) to join a randomly generated channel.
@@ -176,7 +183,7 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "invite", "nick": nick}))
+        self._send_packet({"cmd": "invite", "nick": nick})
 
     def stats(self):
         """This sends the number of unique IPs and channels on https://hack.chat to the callback function.
@@ -189,7 +196,7 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "stats"}))
+        self._send_packet({"cmd": "stats"})
 
     def ban(self, nick):
         """Bans the user <nick> (string) from https://hack.chat for 24 hours.
@@ -207,7 +214,7 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "ban", "nick": nick}))
+        self._send_packet({"cmd": "ban", "nick": nick})
 
     def unban(self, ip):
         """Unbans the user having the IP <ip> (string) (<pwd> must be that of a moderators' or admins').
@@ -219,7 +226,7 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "unban", "nick": nick}))
+        self._send_packet({"cmd": "unban", "nick": nick})
 
     def list_users(self):
         """This lists the users (<pwd> must be that of an admins').
@@ -227,7 +234,7 @@ class HackChat:
         This sends data of the form {"type": "list users", "text": <online users>} to the callback function.
         """
 
-        self._ws.send(json.dumps({"cmd": "listUsers"}))
+        self._send_packet({"cmd": "listUsers"})
 
     def broadcast(self, text):
         """Sends <text> (string) to https://hack.chat with this function (<pwd> must be that of an admins').
@@ -239,4 +246,4 @@ class HackChat:
         }
         """
 
-        self._ws.send(json.dumps({"cmd": "broadcast", "text": text}))
+        self._send_packet({"cmd": "broadcast", "text": text})

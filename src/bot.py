@@ -28,6 +28,7 @@ if not os.path.isfile("credentials.py"):
         channel = input("Enter which channel you would like to connect to (mandatory): ")
         print("\nFor the bot to know when it's being called, you must state a trigger.")
         trigger = input("Enter the bots trigger (e.g., \".\" will trigger the bot for \".help\") (mandatory): ")
+        url = input("Enter the URL of the hack.chat instance to connect to (optional): ")
         oxfordAppId = input("\nEnter the Oxford Dictionaries API app id for definitions and translations (optional): ")
         oxfordAppKey = input("Enter the Oxford Dictionaries API app key for definitions and translations (optional): ")
         exchangeRateApiKey = input("\nEnter the currency converter API key (optional): ")
@@ -37,6 +38,7 @@ if not os.path.isfile("credentials.py"):
                 + "pwd = \"{}\"\n".format(pwd)
                 + "channel = \"{}\"\n".format(channel)
                 + "trigger = \"{}\"\n".format(trigger)
+                + "url = \"{}\"\n".format(url if url else "wss://hack.chat/chat-ws")
                 + "oxfordAppId = \"{}\"\n".format(oxfordAppId)
                 + "oxfordAppKey = \"{}\"\n".format(oxfordAppKey)
                 + "exchangeRateApiKey = \"{}\"\n".format(exchangeRateApiKey)
@@ -64,7 +66,7 @@ def callback(hackChat, info):
     if info["type"] == "warn":
         print("\nWARNING at {}:\n{}".format(datetime.datetime.now(), info["warning"]))
     elif info["type"] == "invite":
-        connection.HackChat(callback, credentials.name, credentials.pwd).join(info["channel"])
+        connection.HackChat(callback, credentials.name, credentials.pwd, credentials.url).join(info["channel"])
     elif info["type"] == "stats":
         hackChat.send("There are {} unique IPs in {} channels.".format(info["IPs"], info["channels"]))
     if info["type"] != "message":
@@ -93,7 +95,8 @@ def callback(hackChat, info):
         hackChat.send("@{} {}{}".format(info["nick"], credentials.trigger, reply))
     elif isCmd("join"):
         if space:
-            connection.HackChat(callback, credentials.name, credentials.pwd).join(info["text"][space.end():])
+            channel = info["text"][space.end():]
+            connection.HackChat(callback, credentials.name, credentials.pwd, credentials.url).join(channel)
         else:
             hackChat.send("@{} joins a hack.chat channel (e.g., {}join ben)\n".format(info["nick"], credentials.trigger)
                           + "You can also invite the bot via the sidebar.")
@@ -245,5 +248,5 @@ def callback(hackChat, info):
 
 
 if __name__ == "__main__":
-    connection.HackChat(callback, credentials.name, credentials.pwd).join(credentials.channel)
+    connection.HackChat(callback, credentials.name, credentials.pwd, credentials.url).join(credentials.channel)
     print("\nThe bot has started.")
