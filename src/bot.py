@@ -233,8 +233,10 @@ def callback(hackChat, info):
             data = dictionary.urban(info["text"][space.end():])
             if data:
                 definition = data["definition"][:80 * 6][::-1]
-                space = re.search(r"\s", definition)
-                definition = definition[space.end():][::-1]
+                if len(data["definition"]) > 80 * 6:
+                    space = re.search(r"\s", definition)
+                    definition = definition[space.end():]
+                definition = definition[::-1]
                 hackChat.send("@{} {}: {} {}".format(info["nick"], data["word"], definition, data["permalink"]))
             else:
                 hackChat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
