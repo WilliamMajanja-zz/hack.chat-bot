@@ -12,7 +12,6 @@ class HackChat:
 
     Keyword arguments:
     callback -- function; the name of the function to receive data from https://hack.chat
-    channel -- string; the channel on https://hack.chat to connect to
     nick -- string; the nickname to use upon connecting
     pwd -- string; the password that generates you a tripcode upon entering
 
@@ -56,10 +55,10 @@ class HackChat:
         "warning": <explanation of why you have been warned>
     }
     The following warnings may be given (more warnings exist for the explicit usage of some functions in this class):
-    "You are joining channels too fast. Wait a moment and try again."
     "Nickname must consist of up to 24 letters, numbers, and underscores"
     "Cannot impersonate the admin"
     "Nickname taken"
+    "Your IP is being rate-limited or blocked."
 
     Example:
         import connection
@@ -68,25 +67,36 @@ class HackChat:
         def on_message(connector, data): # Make a callback function with two parameters.
             print(data) # The second parameter (<data>) is the data received.
             print(connector.onlineUsers)
-            if data["type"] == "online add": # Check if someone joined the channel.
-                connector.send("Hello {}".format(data["nick"])) # Greet the person joining the channel.
+            if data["type"] == "online add": # Checks if someone joined the channel.
+                connector.send("Hello {}".format(data["nick"])) # Sends a greeting the person joining the channel.
 
 
         if __name__ == "__main__":
-            connection.HackChat(on_message, "bottest", "myBot")
+            hackChat = connection.HackChat(on_message, "myBot")
+            hackChat.join("botDev")
     """
 
-    def __init__(self, callback, channel, nick, pwd = ""):
+    def __init__(self, callback, nick, pwd = ""):
         """This function initializes values."""
         self.callback = callback
-        self.channel = channel
         self.nick = nick
         self.pwd = pwd
         self.onlineUsers = []
         self._ws = websocket.create_connection("wss://hack.chat/chat-ws")
-        self._ws.send(json.dumps({"cmd": "join", "channel": self.channel, "nick": "{}#{}".format(self.nick, self.pwd)}))
         threading.Thread(target = self._ping).start()
         threading.Thread(target = self._run).start()
+
+    def join(self, channel):
+        """Joins the channel <channel> (string) on https://hack.chat.
+
+        The following data may be received by the callback function as a result of using this function.
+        {
+            "type": "warn",
+            "warning": "You are joining channels too fast. Wait a moment and try again."
+        }
+        """
+
+        self._ws.send(json.dumps({"cmd": "join", "channel": channel, "nick": "{}#{}".format(self.nick, self.pwd)}))
 
     def _ping(self):
         """This function periodically pings the server to retain the websocket connection."""
