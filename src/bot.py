@@ -65,7 +65,7 @@ def callback(hackChat, info):
         hackChat.send("@{} {}".format(info["nick"], credentials.github))
     elif isCmd("define") and credentials.oxfordAppId and credentials.oxfordAppKey:
         if space:
-            data = oxfordDictionary.define(info["text"][space.end():])
+            data = oxford.define(info["text"][space.end():])
             if type(data) is str:
                 hackChat.send("@{} {}: {}".format(info["nick"], info["text"][space.end():], data))
             else:
@@ -122,7 +122,7 @@ def callback(hackChat, info):
             data = poetry.poems(info["text"][space.end():], True if isCmd("poet") else False)
             if data:
                 data = data[random.randint(0, len(data) - 1)]
-                poem = utility.shorten(data["poem"], int(roughMaxLen / 2), ".")
+                poem = utility.shorten(data["poem"], int(roughMaxLen / 2), ",")
                 header = "{} by {}".format(data["title"], data["author"])
                 if len(header) > 100:
                     header = "{}...".format(header[:97])
@@ -140,8 +140,9 @@ def callback(hackChat, info):
                               + "(e.g., {}poet shakespeare)".format(credentials.trigger))
     elif isCmd("rate") and credentials.exchangeRateApiKey:
         converted = False
-        if len(re.findall(":", info["text"])) == 2:
-            data = info["text"].split(":")
+        msg = info["text"][:space.start()] if space else info["text"]
+        data = msg.split(":")
+        if len(data) == 3:
             fromCode = data[1]
             toCode = data[2]
             if fromCode and toCode:
@@ -195,7 +196,7 @@ def callback(hackChat, info):
                     symbol = r"[^a-zA-Z\s]"
                     lastChar = lastChar if re.search(symbol, word) else ""
                     word = re.sub(symbol, "", word)
-                    word = oxfordDictionary.translate(word, srcLang, targetLang)
+                    word = oxford.translate(word, srcLang, targetLang)
                     if type(word) is not str:
                         translations = []
                         break
@@ -226,7 +227,7 @@ def callback(hackChat, info):
 
 if __name__ == "__main__":
     random.seed(datetime.datetime.now())
-    oxfordDictionary = dictionary.Oxford(credentials.oxfordAppId, credentials.oxfordAppKey)
+    oxford = dictionary.Oxford(credentials.oxfordAppId, credentials.oxfordAppKey)
     if not credentials.name or not credentials.channel or not credentials.trigger:
         sys.exit("Make sure you have entered \"name\", \"channel\" and \"trigger\" in the file credentials.py.")
     connection.HackChat(callback, credentials.name, credentials.pwd, credentials.url).join(credentials.channel)
