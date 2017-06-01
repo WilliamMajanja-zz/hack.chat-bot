@@ -12,6 +12,9 @@ def dpaste(content, syntax = "text", title = "", poster = "", expiryDays = 1):
     title -- string; the title of the paste
     poster -- string; name or email or nickname
     expiryDays -- int; the number of days before the paste is deleted
+
+    <title> shouldn't have more than 100 characters otherwise the following will be returned.
+    <"* Ensure this value has at most 100 characters (it has 103).> will be returned.">
     """
 
     return requests.post("http://dpaste.com/api/v2/", data = {"content": content,
