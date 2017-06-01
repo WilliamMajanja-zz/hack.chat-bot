@@ -7,13 +7,12 @@ import datetime
 
 
 def strengthen(pwd, spChars = True):
-    """Returns a strengthened password.
+    """Returns a strengthened password (str).
 
     Keyword arguments:
-    pwd -- the password
-    spChars -- boolean; specifies if special characters are allowed
+    pwd -- str; the password to strengthen
+    spChars -- bool; specifies if special characters are allowed
     """
-
     random.seed(datetime.datetime.now())
     spCharsSet = ("{", "}", "(", ")", "[", "]", "#", ":", ";", "^", ",", ".", "?", "!", "|", "&", "_", "`", "~", "@",
                   "$", "%", "/", "\\", "+", "-", "*", "=", "'", "\"")

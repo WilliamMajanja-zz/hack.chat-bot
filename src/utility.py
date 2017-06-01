@@ -6,7 +6,7 @@ import re
 
 
 def shorten(string, maxLen, last = ""):
-    """Shortens <string> (string) to a maximum length of <maxLen> (int) or to the closest <last> before <maxLen>."""
+    """Shortens <string> (str) to a maximum length of <maxLen> (int) or to the closest <last> (str) before <maxLen>."""
     string = string[:maxLen]
     if last:
         incompatibilities = (".", "^", "$", "*", "+", "?", "(", ")", "[", "]", "{", "\\", "|", "-")

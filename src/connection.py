@@ -13,7 +13,7 @@ class HackChat:
     Usage:
     Access the <onlineUsers> property to get a list of the users currently online in the channel.
     Data received by the callback function will have one of the following formats. More formats exist but those are
-    exclusive to the functions in this class accessed by you. All data returned will be of type string.
+    exclusive to the functions in this class accessed by you. All data returned will be of type str.
     {
         "type": "message",
         "nick": <senders' nickname>,
@@ -76,9 +76,9 @@ class HackChat:
 
         Keyword arguments:
         callback -- function; the name of the function to receive data from https://hack.chat
-        nick -- string; the nickname to use upon connecting
-        pwd -- string; the password that generates you a tripcode upon entering
-        url -- string; the hack.chat instance
+        nick -- str; the nickname to use upon connecting
+        pwd -- str; the password that generates you a tripcode upon entering
+        url -- str; the hack.chat instance
         """
         self.callback = callback
         self.nick = nick
@@ -90,7 +90,7 @@ class HackChat:
         threading.Thread(target = self._run).start()
 
     def join(self, channel):
-        """Joins the channel <channel> (string) on https://hack.chat.
+        """Joins the channel <channel> (str) on https://hack.chat.
 
         The following data may be received by the callback function as a result of using this function.
         {
@@ -98,7 +98,6 @@ class HackChat:
             "warning": "You are joining channels too fast. Wait a moment and try again."
         }
         """
-
         self._send_packet({"cmd": "join", "channel": channel, "nick": "{}#{}".format(self.nick, self.pwd)})
 
     def _send_packet(self, data):
@@ -156,7 +155,7 @@ class HackChat:
                 self.callback(self, data)
 
     def send(self, msg):
-        """Use this to send a message <msg> (string) to the channel connected.
+        """Use this to send a message <msg> (str) to the channel connected.
 
         The following data may be sent to the callback function:
         {
@@ -165,11 +164,10 @@ class HackChat:
                        + "Press the up arrow key to restore your last message."
         }
         """
-
         self._send_packet({"cmd": "chat", "text": msg})
 
     def invite(self, nick):
-        """This sends an invite to the person <nick> (string) to join a randomly generated channel.
+        """This sends an invite to the person <nick> (str) to join a randomly generated channel.
 
         This invite will only be visible to <nick>. The callback function will receive the data such as the channel.
         A warning having one of the following formats might be sent to the callback function.
@@ -182,7 +180,6 @@ class HackChat:
             "warning": "Could not find user in channel"
         }
         """
-
         self._send_packet({"cmd": "invite", "nick": nick})
 
     def stats(self):
@@ -195,11 +192,10 @@ class HackChat:
             "channels": <number of channels in use on https://hack.chat>
         }
         """
-
         self._send_packet({"cmd": "stats"})
 
     def ban(self, nick):
-        """Bans the user <nick> (string) from https://hack.chat for 24 hours.
+        """Bans the user <nick> (str) from https://hack.chat for 24 hours.
 
         <pwd> must be that of a moderators' or admins'. You cannot ban a moderator or admin.
         The callback function will receive data as a result having one of the following formats:
@@ -213,11 +209,10 @@ class HackChat:
             "warning": "Cannot ban moderator"
         }
         """
-
         self._send_packet({"cmd": "ban", "nick": nick})
 
     def unban(self, ip):
-        """Unbans the user having the IP <ip> (string) (<pwd> must be that of a moderators' or admins').
+        """Unbans the user having the IP <ip> (str) (<pwd> must be that of a moderators' or admins').
 
         The callback function will receive data as a result if <nick> was unbanned having the following format.
         {
@@ -225,7 +220,6 @@ class HackChat:
             "ip": <ip of unbanned user>
         }
         """
-
         self._send_packet({"cmd": "unban", "nick": nick})
 
     def list_users(self):
@@ -233,11 +227,10 @@ class HackChat:
 
         This sends data of the form {"type": "list users", "text": <online users>} to the callback function.
         """
-
         self._send_packet({"cmd": "listUsers"})
 
     def broadcast(self, text):
-        """Sends <text> (string) to https://hack.chat with this function (<pwd> must be that of an admins').
+        """Sends <text> (str) to https://hack.chat with this function (<pwd> must be that of an admins').
 
         The following data will be sent to the callback function.
         {
@@ -245,5 +238,4 @@ class HackChat:
             "text": <the message broadcasted>
         }
         """
-
         self._send_packet({"cmd": "broadcast", "text": text})

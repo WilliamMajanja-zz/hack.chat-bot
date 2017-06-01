@@ -7,10 +7,10 @@ def katex_generator(txt, size = "normalsize", color = "", font = ""):
     """Returns a KaTeX formatted string (e.g., passing "hi" will return "${h}{i}$").
 
     Keyword arguments:
-    txt -- string; contains text to be converted to katex
-    size -- string; changes the font size of <txt>
-    color -- string; changes the color of <txt>
-    font -- string; changes the font of <txt>
+    txt -- str; contains text to be converted to katex
+    size -- str; changes the font size of <txt>
+    color -- str; changes the color of <txt>
+    font -- str; changes the font of <txt>
 
     Values:
     <txt> shouldn't contain "#", "$", "%", "&", "_", "{", "}", "\", "?" as KaTeX doesn't support them.
@@ -20,7 +20,6 @@ def katex_generator(txt, size = "normalsize", color = "", font = ""):
                    "\mathcal", "\mathfrak", "\mathscr", "\textrm", "\textit", "\textbf", "\textsf", "\texttt",
                    "\textnormal", "\Bbb", "\bold", "\frak"
     """
-
     txt = " ".join(txt.split())
     katexColor = "\\{}".format(color) if color != "rainbow" and color != "" else color
     font = "\\{}".format(font) if font else font
