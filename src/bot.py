@@ -11,6 +11,7 @@ import sys
 import threading
 
 import connection
+import utility
 from commands import currency, jokes, dictionary, katex, password, paste, poetry, search
 
 if not os.path.isfile("credentials.py"):
@@ -46,20 +47,6 @@ if not os.path.isfile("credentials.py"):
 
 import credentials
 
-random.seed(datetime.datetime.now())
-oxfordDictionary = dictionary.Oxford(credentials.oxfordAppId, credentials.oxfordAppKey)
-if not credentials.name or not credentials.channel or not credentials.trigger:
-    sys.exit("Make sure you have entered \"name\", \"channel\" and \"trigger\" in the file credentials.py.")
-
-
-def identical_item(list1, list2):
-    """Returns the element common to both <list1> (list) as well as <list2> (list) else <None>."""
-    for item in list1:
-        for part in list2:
-            if item == part:
-                return item
-    return
-
 
 def callback(hackChat, info):
     """This is an impure callback function that receives and sends data from and to https://hack.chat."""
@@ -71,6 +58,7 @@ def callback(hackChat, info):
         hackChat.send("There are {} unique IPs in {} channels.".format(info["IPs"], info["channels"]))
     if info["type"] != "message":
         return
+    roughMaxLen = 83 * 4
     isCmd = lambda cmd: info["text"][:len(credentials.trigger + cmd)].lower() == "{}{}".format(credentials.trigger, cmd)
     space = re.search(r"\s", info["text"].strip())
     if isCmd("about") and credentials.github:
@@ -111,9 +99,9 @@ def callback(hackChat, info):
             if set(msg).isdisjoint(("#", "$", "%", "&", "_", "{", "}", "\\", "?")):
                 data = info["text"][:space.start()].split(".")
                 stringify = lambda value: value if value else ""
-                size = stringify(identical_item(data, sizes))
-                color = stringify(identical_item(data, colors))
-                font = stringify(identical_item(data, fonts))
+                size = stringify(utility.identical_item(data, sizes))
+                color = stringify(utility.identical_item(data, colors))
+                font = stringify(utility.identical_item(data, fonts))
                 hackChat.send("@{} says {}".format(info["nick"], katex.katex_generator(msg, size, color, font)))
             else:
                 hackChat.send("@%s KaTeX doesn't support \"?\", \"{\", \"}\", \"\\\" and \"_\"" % info["nick"])
@@ -131,15 +119,15 @@ def callback(hackChat, info):
             hackChat.send("@{} strengthens a password (e.g., {}password gum)".format(info["nick"], credentials.trigger))
     elif isCmd("poem") or isCmd("poet"):
         if space:
-            poet = True if info["text"][len(credentials.trigger):len(credentials.trigger + "poet")] == "poet" else False
-            data = poetry.poems(info["text"][space.end():], poet)
+            data = poetry.poems(info["text"][space.end():], True if isCmd("poet") else False)
             if data:
                 data = data[random.randint(0, len(data) - 1)]
-                poem = ""
-                for line in range(0, 3):
-                    poem += data["poem"].split("\n")[line] + "\n"
-                pastedPoem = paste.dpaste(data["poem"], title = "{} by {}".format(data["title"], data["author"]))
-                hackChat.send("@{} {}\nBy: {}\n{}".format(info["nick"], data["title"], data["author"], poem)
+                poem = utility.shorten(data["poem"], int(roughMaxLen / 2), ".")
+                header = "{} by {}".format(data["title"], data["author"])
+                if len(header) > 100:
+                    header = "{}...".format(header[:97])
+                pastedPoem = paste.dpaste(data["poem"], title = header)
+                hackChat.send("@{} {}\nBy: {}\n{}\n".format(info["nick"], data["title"], data["author"], poem)
                               + "You can read the rest at {}".format(pastedPoem))
             else:
                 hackChat.send("@{} Sorry, I couldn't find any poems for that.".format(info["nick"]))
@@ -153,10 +141,9 @@ def callback(hackChat, info):
     elif isCmd("rate") and credentials.exchangeRateApiKey:
         converted = False
         if len(re.findall(":", info["text"])) == 2:
-            firstColon = re.search(":", info["text"])
-            secondColon = re.search(":", info["text"][firstColon.end():])
-            fromCode = info["text"][firstColon.end():firstColon.end() + secondColon.start()]
-            toCode = info["text"][firstColon.end() + secondColon.end():firstColon.end() + secondColon.end() + 3]
+            data = info["text"].split(":")
+            fromCode = data[1]
+            toCode = data[2]
             if fromCode and toCode:
                 rate = currency.convert(credentials.exchangeRateApiKey, fromCode, toCode)
                 if type(rate) is float:
@@ -175,12 +162,10 @@ def callback(hackChat, info):
                 if "Heading" in results:
                     reply += "{}: ".format(results["Heading"])
                 if "Answer" in results:
-                    modify = results["Answer"]
+                    reply += results["Answer"]
                 elif "AbstractText" in results:
-                    modify = results["AbstractText"]
-                modify = modify[:80 * 6][::-1]
-                period = re.search("\.", modify)
-                reply += modify[period.start():][::-1]
+                    reply += results["AbstractText"]
+            reply = utility.shorten(reply, roughMaxLen, ".")
             hackChat.send("@{} {}".format(info["nick"], reply if reply else "Sorry, I couldn't find anything."))
         else:
             hackChat.send("@{} instant answers (e.g., {}search pokemon ruby)".format(info["nick"], credentials.trigger))
@@ -199,14 +184,10 @@ def callback(hackChat, info):
                      "tswana": "tn"}
         translatable = True
         if space and len(re.findall(":", info["text"][:space.start()])) == 2:
-            cmd = info["text"][:space.start()]
-            firstColon = re.search(":", cmd)
-            secondColon = re.search(":", cmd[firstColon.end():])
-            srcLang = cmd[firstColon.end():firstColon.end() + secondColon.start()].lower()
-            targetLang = cmd[firstColon.end() + secondColon.end():].lower()
-            if srcLang in languages and targetLang in languages:
-                srcLang = languages[srcLang]
-                targetLang = languages[targetLang]
+            data = info["text"][:space.start()].lower().split(":")
+            if data[1] in languages and data[2] in languages:
+                srcLang = languages[data[1]]
+                targetLang = languages[data[2]]
                 words = info["text"][space.end():].split()
                 translations = []
                 for word in words:
@@ -235,11 +216,7 @@ def callback(hackChat, info):
         if space:
             data = dictionary.urban(info["text"][space.end():])
             if data:
-                definition = data["definition"][:80 * 6][::-1]
-                if len(data["definition"]) > 80 * 6:
-                    space = re.search(r"\s", definition)
-                    definition = definition[space.end():]
-                definition = definition[::-1]
+                definition = utility.shorten(data["definition"], roughMaxLen, " ")
                 hackChat.send("@{} {}: {} {}".format(info["nick"], data["word"], definition, data["permalink"]))
             else:
                 hackChat.send("@{} Sorry, I couldn't find any definitions for that.".format(info["nick"]))
@@ -248,5 +225,9 @@ def callback(hackChat, info):
 
 
 if __name__ == "__main__":
+    random.seed(datetime.datetime.now())
+    oxfordDictionary = dictionary.Oxford(credentials.oxfordAppId, credentials.oxfordAppKey)
+    if not credentials.name or not credentials.channel or not credentials.trigger:
+        sys.exit("Make sure you have entered \"name\", \"channel\" and \"trigger\" in the file credentials.py.")
     connection.HackChat(callback, credentials.name, credentials.pwd, credentials.url).join(credentials.channel)
     print("\nThe bot has started.")
