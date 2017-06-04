@@ -47,5 +47,4 @@ Temporary Items
 .apdisk
 
 __pycache__
-credentials.py
-*.log
+config.json

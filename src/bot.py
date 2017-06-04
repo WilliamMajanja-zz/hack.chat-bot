@@ -4,6 +4,7 @@
 
 import datetime
 import getpass
+import json
 import os.path
 import random
 import re
@@ -21,57 +22,6 @@ from commands import paste
 from commands import poetry
 from commands import search
 
-if not os.path.isfile("credentials.py"):
-    with open("credentials.py", "w") as f:
-        print("You can change your credentials later in the file "
-              + "credentials.py located in the src folder. The features whose "
-              + "API tokens you don't enter will remain inaccessible until "
-              + "you enter them.")
-        name = input("\nEnter the name of the bot (e.g., myBot) (mandatory): ")
-        print("\nA trip code is a randomly generated code based on a "
-              + "password. Entering the same password gives the same trip "
-              + "code each time. This allows people in anonymous chatting "
-              + "sites to verify if a user is who they claim to be regardless "
-              + "of their nickname.")
-        pwd = getpass.getpass("For privacy, the password will not be shown on "
-                              + "the screen while you're typing. Enter the "
-                              + "password for the trip code (e.g., "
-                              + "myPassword) (optional): ")
-        print("\nChannels are chats on https://hack.chat. If the channel for "
-              + "the name you enter doesn't exist, one will automatically be "
-              + "created. To join the \"math\" channel "
-              + "(https://hack.chat/?math), enter \"math\".)")
-        channel = input("Enter which channel you would like to connect to "
-                        + "(mandatory): ")
-        print("\nFor the bot to know when it's being called, you must state a "
-              + "trigger.")
-        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the "
-                        + "bot for \".help\") (mandatory): ")
-        url = input("\nEnter the websocket URL of the hack.chat instance to "
-                    + "connect to (not stating one will enter the original "
-                    + "sites' websocket URL) (optional): ")
-        url = url if url else "wss://hack.chat/chat-ws"
-        oxfordAppId = input("\nEnter the Oxford Dictionaries API app id for "
-                            + "definitions and translations (optional): ")
-        oxfordAppKey = input("Enter the Oxford Dictionaries API app key for "
-                             + "definitions and translations (optional): ")
-        exchangeRateApiKey = input("\nEnter the currency converter API key "
-                                   + "(optional): ")
-        github = input("\nEnter the link to the GitHub repository this is on "
-                       + "(optional): ")
-        f.write("#!/usr/bin/env python3\n\n\n"
-                + "name = \"{}\"\n".format(name)
-                + "pwd = \"{}\"\n".format(pwd)
-                + "channel = \"{}\"\n".format(channel)
-                + "trigger = \"{}\"\n".format(trigger)
-                + "url = \"{}\"\n".format(url)
-                + "oxfordAppId = \"{}\"\n".format(oxfordAppId)
-                + "oxfordAppKey = \"{}\"\n".format(oxfordAppKey)
-                + "exchangeRateApiKey = \"{}\"\n".format(exchangeRateApiKey)
-                + "github = \"{}\"\n".format(github))
-
-import credentials
-
 
 def callback(hackChat, info):
     """Impure callback function for the bot."""
@@ -79,8 +29,8 @@ def callback(hackChat, info):
         data = "\nWARNING at {}:\n{}"
         print(data.format(datetime.datetime.now(), info["warning"]))
     elif info["type"] == "invite":
-        connector = connection.HackChat(callback, credentials.name,
-                                        credentials.pwd, credentials.url)
+        connector = connection.HackChat(callback, config["name"],
+                                        config["password"], config["url"])
         connector.join(info["channel"])
     elif info["type"] == "stats":
         data = "There are {} unique IPs in {} channels."
@@ -88,13 +38,13 @@ def callback(hackChat, info):
     if info["type"] != "message":
         return
     roughMaxLen = 83 * 4
-    isCmd = lambda cmd: info["text"][:len(credentials.trigger + cmd)] \
-                        == credentials.trigger + cmd
+    isCmd = lambda cmd: info["text"][:len(config["trigger"] + cmd)] \
+                        == config["trigger"] + cmd
     space = re.search(r"\s", info["text"].strip())
-    if isCmd("about") and credentials.github:
-        hackChat.send("@{} {}".format(info["nick"], credentials.github))
-    elif (isCmd("define") and credentials.oxfordAppId
-          and credentials.oxfordAppKey):
+    if isCmd("about") and config["github"]:
+        hackChat.send("@{} {}".format(info["nick"], config["github"]))
+    elif (isCmd("define") and config["oxfordAppId"]
+          and config["oxfordAppKey"]):
         if space:
             data = oxford.define(info["text"][space.end():])
             if data["type"] == "success":
@@ -106,27 +56,29 @@ def callback(hackChat, info):
                               + "any definitions for that.")
         else:
             hackChat.send("@{} (e.g., {}define hello)".format(
-                info["nick"], credentials.trigger))
+                info["nick"], config["trigger"]))
     elif ((isCmd("h") and
-           len(info["text"].strip()) == len(credentials.trigger + "h"))
+           len(info["text"].strip()) == len(config["trigger"] + "h"))
           or isCmd("help")):
-        commands = ["about", "h", "help", "join", "joke", "katex", "poem",
+        commands = ["h", "help", "join", "joke", "katex", "poem",
                     "poet", "password", "search", "stats", "toss", "urban"]
-        if credentials.oxfordAppId and credentials.oxfordAppKey:
+        if config["github"]:
+            commands.append("about")
+        if config["oxfordAppId"] and config["oxfordAppKey"]:
             commands += ["define", "translate"]
-        if credentials.exchangeRateApiKey:
+        if config["exchangeRateApiKey"]:
             commands.append("rate")
-        reply = " {}".format(credentials.trigger).join(sorted(commands))
-        hackChat.send("@{} {}{}".format(info["nick"], credentials.trigger,
+        reply = " {}".format(config["trigger"]).join(sorted(commands))
+        hackChat.send("@{} {}{}".format(info["nick"], config["trigger"],
                                         reply))
     elif isCmd("join"):
         if space:
-            connector = connection.HackChat(callback, credentials.name,
-                                            credentials.pwd, credentials.url)
+            connector = connection.HackChat(callback, config["name"],
+                                            config["password"], config["url"])
             connector.join(info["text"][space.end():])
         else:
             hackChat.send("@{} joins a hack.chat channel ".format(info["nick"])
-                          + "(e.g., {}join ben)\n".format(credentials.trigger)
+                          + "(e.g., {}join ben)\n".format(config["trigger"])
                           + "You can also invite the bot via the sidebar.")
     elif isCmd("joke"):
         hackChat.send("@{} {}".format(info["nick"], jokes.yo_momma()))
@@ -152,8 +104,8 @@ def callback(hackChat, info):
                 hackChat.send("@{} KaTeX doesn't support {}".format(
                     info["nick"], disallowed.join(", ")))
         else:
-            reply = ("@{} stylizes text ".format(info["nick"])
-                     + "(e.g., {}katex.rainbow.huge".format(credentials.trigger)
+            reply = ("@{} stylizes text (e.g., ".format(info["nick"])
+                     + "{}katex.rainbow.huge".format(config["trigger"])
                      + " hello)\n")
             optional = lambda x: "\", \"".join(x)
             reply += "OPTIONAL COLORS: \"{}\"\n".format(optional(colors))
@@ -166,7 +118,7 @@ def callback(hackChat, info):
             hackChat.send("@{} {}".format(info["nick"], pwd))
         else:
             hackChat.send("@{} strengthens a password ".format(info["nick"])
-                          + "(e.g., {}password ".format(credentials.trigger)
+                          + "(e.g., {}password ".format(config["trigger"])
                           + "gum)")
     elif isCmd("poem") or isCmd("poet"):
         if space:
@@ -188,13 +140,13 @@ def callback(hackChat, info):
         else:
             if isCmd("poem"):
                 hackChat.send("@{} finds a poem by its ".format(info["nick"])
-                              + "name (e.g., {}".format(credentials.trigger)
+                              + "name (e.g., {}".format(config["trigger"])
                               + "poem sonnet)")
             else:
                 hackChat.send("@{} finds a poem from a ".format(info["nick"])
-                              + "poet (e.g., {}".format(credentials.trigger)
+                              + "poet (e.g., {}".format(config["trigger"])
                               + "poet shakespeare)")
-    elif isCmd("rate") and credentials.exchangeRateApiKey:
+    elif isCmd("rate") and config["exchangeRateApiKey"]:
         converted = False
         msg = info["text"][:space.start()] if space else info["text"]
         data = msg.split(":")
@@ -202,8 +154,8 @@ def callback(hackChat, info):
             fromCode = data[1]
             toCode = data[2]
             if fromCode and toCode:
-                data = currency.convert(credentials.exchangeRateApiKey,
-                                        fromCode, toCode)
+                data = currency.convert(config["exchangeRateApiKey"], fromCode,
+                                        toCode)
                 if data["type"] == "success":
                     converted = True
                     hackChat.send("@{} 1 {} = {} {}".format(
@@ -211,7 +163,7 @@ def callback(hackChat, info):
                         toCode.upper()))
         if not converted:
             hackChat.send("@{} Sorry, I couldn't convert ".format(info["nick"])
-                          + "that. (e.g., {}".format(credentials.trigger)
+                          + "that. (e.g., {}".format(config["trigger"])
                           + "rate:usd:inr gives 1 USD = 64 INR)")
     elif isCmd("search"):
         if space:
@@ -233,15 +185,15 @@ def callback(hackChat, info):
             hackChat.send("@{} {}".format(info["nick"], finding))
         else:
             hackChat.send("@{} instant answers ".format(info["nick"])
-                          + "(e.g., {}search ".format(credentials.trigger)
+                          + "(e.g., {}search ".format(config["trigger"])
                           + "pokemon ruby)")
     elif isCmd("stats"):
         hackChat.stats()
     elif isCmd("toss"):
         result = "heads" if random.randint(0, 1) == 1 else "tails"
         hackChat.send("@{} {}".format(info["nick"], result))
-    elif (isCmd("translate") and credentials.oxfordAppId
-          and credentials.oxfordAppKey):
+    elif (isCmd("translate") and config["oxfordAppId"]
+          and config["oxfordAppKey"]):
         languages = {"english": "en",
                      "spanish": "es",
                      "pedi": "nso",
@@ -282,7 +234,7 @@ def callback(hackChat, info):
         if not translatable:
             hackChat.send("@{} supported languages: ".format(info["nick"])
                           + "{}\n".format(", ".join(languages.keys()))
-                          + "e.g., {}".format(credentials.trigger)
+                          + "e.g., {}".format(config["trigger"])
                           + "translate:english:spanish I have a holiday!\n"
                           + "will translate from from English to Spanish")
     elif isCmd("urban"):
@@ -297,18 +249,68 @@ def callback(hackChat, info):
                               + "find any definitions for that.")
         else:
             hackChat.send("@{} searches Urban Dictionary ".format(info["nick"])
-                          + "(e.g., {}urban fag)".format(credentials.trigger))
+                          + "(e.g., {}urban fag)".format(config["trigger"]))
 
 
 if __name__ == "__main__":
     random.seed(datetime.datetime.now())
-    oxford = dictionary.Oxford(credentials.oxfordAppId,
-                               credentials.oxfordAppKey)
-    if (not credentials.name or not credentials.channel
-            or not credentials.trigger):
+    if not os.path.isfile("config.json"):
+        print("You can change your configuration later in the file "
+              + "config.json located in the src folder. The features whose "
+              + "API tokens you don't enter will remain inaccessible until "
+              + "you enter them.")
+        name = input("\nEnter the name of the bot (e.g., myBot) (mandatory): ")
+        print("\nA trip code is a randomly generated code based on a "
+              + "password. Entering the same password gives the same trip "
+              + "code each time. This allows people in anonymous chatting "
+              + "sites to verify if a user is who they claim to be regardless "
+              + "of their nickname.")
+        pwd = getpass.getpass("For privacy, the password will not be shown on "
+                              + "the screen while you're typing. Enter the "
+                              + "password (e.g., myPassword) (optional): ")
+        print("\nChannels are chats on https://hack.chat. If the channel for "
+              + "the name you enter doesn't exist, one will automatically be "
+              + "created. To join the \"math\" channel "
+              + "(https://hack.chat/?math), enter \"math\".)")
+        channel = input("Enter which channel you would like to connect to "
+                        + "(mandatory): ")
+        print("\nFor the bot to know when it's being called, you must state a "
+              + "trigger.")
+        trigger = input("Enter the bots trigger (e.g., \".\" will trigger the "
+                        "bot for \".help\") (mandatory): ")
+        url = input("\nEnter the websocket URL of the hack.chat instance to "
+                    + "connect to (not stating one will enter the original "
+                    + "sites' websocket URL) (optional): ")
+        url = url if url else "wss://hack.chat/chat-ws"
+        oxfordAppId = input("\nEnter the Oxford Dictionaries API app id for "
+                            + "definitions and translations (optional): ")
+        oxfordAppKey = input("Enter the Oxford Dictionaries API app key for "
+                             + "definitions and translations (optional): ")
+        exchangeRateApiKey = input("\nEnter the currency converter API key "
+                                   + "(optional): ")
+        github = input("\nEnter the link to the GitHub repository this is on "
+                       + "(optional): ")
+        print()
+        data = {
+            "name": name,
+            "password": pwd,
+            "channel": channel,
+            "trigger": trigger,
+            "url": url,
+            "oxfordAppId": oxfordAppId,
+            "oxfordAppKey": oxfordAppKey,
+            "exchangeRateApiKey": exchangeRateApiKey,
+            "github": github
+        }
+        with open("config.json", "w") as file_:
+            json.dump(data, file_, indent = 4)
+    with open("config.json", "r") as f:
+        config = json.loads(f.read())
+    if not config["name"] or not config["channel"] or not config["trigger"]:
         sys.exit("Make sure you have entered \"name\", \"channel\" and "
-                 + "\"trigger\" in the file credentials.py.")
-    connector = connection.HackChat(callback, credentials.name,
-                                    credentials.pwd, credentials.url)
-    connector.join(credentials.channel)
+                 + "\"trigger\" in config.json located in the src folder.")
+    oxford = dictionary.Oxford(config["oxfordAppId"], config["oxfordAppKey"])
+    connector = connection.HackChat(callback, config["name"],
+                                    config["password"], config["url"])
+    connector.join(config["channel"])
     print("\nThe bot has started.")
