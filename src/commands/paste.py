@@ -3,21 +3,40 @@
 import requests
 
 
-def dpaste(content, syntax = "text", title = "", poster = "", expiryDays = 1):
-    """Pastes to http://dpaste.com/ and returns the pastes url (str).
+def dpaste(content, syntax="text", title="", poster="", expiryDays=1):
+    """Pastes to http://dpaste.com/ and returns the pastes' URL (<str>).
 
     Keyword arguments:
-    content -- str; what is to be pasted
-    syntax -- str; the language of <content>
-    title -- str; the title of the paste
-    poster -- str; name or email or nickname
-    expiryDays -- int; the number of days before the paste is deleted
+    content -- <str>; the content to be pasted
+    syntax -- <str>; the language of <content>
+    title -- <str>; the title of the paste
+    poster -- <str>; the name/email/nickname of creator
+    expiryDays -- <int>; the number of days before the paste is deleted
 
-    <title> shouldn't have more than 100 characters otherwise the following will be returned.
-    <"* Ensure this value has at most 100 characters (it has 103).> will be returned.">
+    Values:
+    <syntax> may be one of those listed at
+             http://dpaste.com/api/v2/syntax-choices/
+    <title> should not be greater than 100 characters
+    <expiryDays> must be between <1> and <365>
+
+    Return values:
+    successfully pasted (<dict>):
+        {
+            "type": "success",
+            "data": <str>; the URL of the paste
+        }
+    <title> has more than 100 characters (<dict>):
+        {
+            "type": "failure",
+            "data": <str>; the reason for failure
+        }
     """
-    return requests.post("http://dpaste.com/api/v2/", data = {"content": content,
-                                                              "syntax": syntax,
-                                                              "title": title,
-                                                              "poster": poster,
-                                                              "expiry_days": expiryDays}).text
+    paste = {"content": content,
+             "syntax": syntax,
+             "title": title,
+             "poster": poster,
+             "expiry_days": expiryDays}
+    data = requests.post("http://dpaste.com/api/v2/", data = paste).text
+    if data[:len("http://")] == "http://":
+        return {"type": "success", "data": data}
+    return {"type": "failure", "data": data}

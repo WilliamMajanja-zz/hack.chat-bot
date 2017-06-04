@@ -2,99 +2,158 @@
 
 """Contains functionality from various dictionaries."""
 
+import re
 import requests
 import json
 
 
 class Oxford():
-    """Uses the Oxford Dictionaries API for language tools such as definitions and translations."""
+    """Uses the Oxford Dictionaries API for tools like translations.
+
+    You can get API keys at https://developer.oxforddictionaries.com/.
+    """
 
     def __init__(self, appId, appKey):
-        """Authorizes the application.
+        """Gets credentials.
 
         Keyword arguments:
-        appId -- str; Oxford Dictionaries API ID
-        appKey -- str; Oxford Dictionaries API Key
+        appId -- <str>; Oxford Dictionaries API ID
+        appKey -- <str>; Oxford Dictionaries API Key
         """
         self.appId = appId
         self.appKey = appKey
 
-    def define(self, word, lang = "en"):
+    def define(self, word, lang="en"):
         """Returns a definition.
 
         Keyword arguments:
-        word -- str; the word to be defined
-        lang -- str; an IANA language code indicating which language to use (e.g., <"en"> for English)
+        word -- <str>; the word to be defined
+        lang -- <str>; the IANA language code for the definition
 
         Return values:
-        definition -- str; the definition for <word>
-        404 -- int; the status code if the word wasn't found
-        500 -- int; the status code if there was a processing error
-        None -- None; if the word was found but there wasn't a definition
+        definition found (<dict>):
+            {
+                "type": "success",
+                "response": <str>; the definition of <word>
+            }
+        <word> not found (<dict>):
+            {
+                "type": "failure",
+                "response": 400
+            }
+        <word> found sans definition (<dict>):
+            {
+                "type": "failure",
+                "response": None
+            }
+        processing error (<dict>):
+            {
+                "type": "failure",
+                "response": 500
+            }
         """
-        url = "https://od-api.oxforddictionaries.com/api/v1/entries/{}/{}".format(lang, word.lower())
-        site = requests.get(url, headers = {"app_id": self.appId, "app_key": self.appKey})
-        if site.status_code == 404 or site.status_code == 500: # 404: NOT FOUND; 500: PROCESSING ERROR
-            return site.status_code
+        url = "https://od-api.oxforddictionaries.com/api/v1/entries/{}/{}"
+        url = url.format(lang, word.lower())
+        headers = {"app_id": self.appId, "app_key": self.appKey}
+        site = requests.get(url, headers = headers)
+        if site.status_code == 404 or site.status_code == 500:
+            return {"type": "failure", "response": site.status_code}
         data = site.json()
-        data = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]
+        data = data["results"][0]["lexicalEntries"][0]["entries"][0]
+        data = data["senses"][0]
         if "definitions" in data:
-            return data["definitions"][0]
+            return {"type": "success", "response": data["definitions"][0]}
+        else:
+            return {"type": "failure", "response": None}
 
-    def translate(self, word, srcLang, targetLang):
-        """Returns a translation of <word> or <None> if no translations were found.
+    def translate(self, word, targetLang, srcLang="en"):
+        """Translates <word> from <srcLang> to <targetLang>.
 
         Keyword arguments:
-        word -- str; the word to be translated
-        srcLang -- str; the IANA language code indicating which language <word> is in
-        targetLang -- str; the IANA language code indicating which language <word> should be translated to
+        word -- <str>; the word to be translated
+        srcLang -- <str>; the IANA language code <word> is in
+        targetLang -- <str>; the IANA language code to translate to
+
+        The following IANA language codes are accepted.
+        "en" for English
+        "es" for Spanish, Castilian
+        "nso" for Pedi, Northern Sotho, Sepedi
+        "ro" for Romanian, Moldavian, Moldovan
+        "ms" for Malay
+        "zu" for Zulu
+        "id" for Indonesian
+        "tn" for Tswana
 
         Return values:
-        translation -- str; the translation of <word>
-        400 -- int; the status code if <targetLang> isn't known
-        404 -- int; the status code if no translation was found
-        500 -- int; the status code if there was a processing error
-        None -- None; if the word was found but a translation doesn't exist
-
-        The languages supported are (IANA language code: language name)
-        en: English
-        es: Spanish, Castilian
-        nso: Pedi, Northern Sotho, Sepedi
-        ro: Romanian, Moldavian, Moldovan
-        ms: Malay
-        zu: Zulu
-        id: Indonesian
-        tn: Tswana
+        <word> was successfully translated (<dict>):
+            {
+                "type": "success",
+                "response": <str>; the translation of <word>
+            }
+        <targetLang> is unknown (<dict>):
+            {
+                "type": "failure",
+                "response": 400
+            }
+        no translation found (<dict>):
+            {
+                "type": "failure",
+                "response": 404
+            }
+        processing error (<dict>):
+            {
+                "type": "failure",
+                "response": 500
+            }
+        <word> was found but no translation was found (<dict>):
+            {
+                "type": "failure",
+                "response": None
+            }
         """
-        url = "https://od-api.oxforddictionaries.com:443/api/v1/entries/{}/{}/translations={}"
+        url = ("https://od-api.oxforddictionaries.com:443/api/v1/entries/"
+               + "{}/{}/translations={}")
         url = url.format(srcLang, word.lower(), targetLang)
-        site = requests.get(url, headers = {"app_id": self.appId, "app_key": self.appKey})
-        # STATUS CODES:
-        # 400: <targetLang> IS UNKNOWN
-        # 404: NO TRANSLATION FOUND
-        # 500: INTERNAL ERROR
-        if site.status_code == 400 or site.status_code == 404 or site.status_code == 500:
-            return site.status_code
+        headers = {"app_id": self.appId, "app_key": self.appKey}
+        site = requests.get(url, headers = headers)
+        if re.match(r"400|404|500", str(site.status_code)):
+            return {"type": "failure", "response": site.status_code}
         data = site.json()
-        data = data["results"][0]["lexicalEntries"][0]["entries"][0]["senses"][0]
-        try:
-            if "subsenses" in data:
-                return data["subsenses"][0]["translations"][0]["text"]
-            return data["translations"][0]["text"]
-        except KeyError:
-            return
+        data = data["results"][0]["lexicalEntries"][0]["entries"][0]
+        data = data["senses"][0]
+        if "subsenses" in data:
+            data = data["subsenses"][0]["translations"][0]["text"]
+        elif "translations" in data:
+            data = data["translations"][0]["text"]
+        else:
+            return {"type": "failure", "response": None}
+        return {"type": "success", "response": data}
 
 
 def urban(search):
-    """Returns a definition from Urban Dictionary using <search> (str).
+    """Gives definitions from Urban Dictionary.
+
+    Urban Dictionary is a crowdsourced online dictionary of slang words
+    and phrases (http://www.urbandictionary.com/).
+
+    Keyword arguments:
+    search -- <str>; the term to be searched for
 
     Return values:
-    data -- dict; {"word": word, "definition": definition, "permalink": permalink} if there's a definition for <search>
-    None -- None; if no definition was found with <search>
+    a definition for <search> was found (<dict>):
+        {
+            "word": <str>; the word being defined,
+            "definition": <str>; the definition of <word>,
+            "permalink": <str>; permalink to definition
+        }
+    no definition found:
+        <None>
     """
     url = "http://api.urbandictionary.com/v0/define?term={}".format(search)
-    data = json.loads(requests.get(url).text)
+    data = requests.get(url).text
+    data = json.loads(data)
     if data["result_type"] == "no_results":
-        return
+        return None
     data = data["list"][0]
-    return {"word": data["word"], "definition": data["definition"], "permalink": data["permalink"]}
+    return {"word": data["word"], "definition": data["definition"],
+            "permalink": data["permalink"]}

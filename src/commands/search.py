@@ -4,27 +4,32 @@ import requests
 import json
 
 
-def duckduckgo(search, appName = ""):
-    """Returns instant answers from DuckDuckGo (https://duckduckgo.com/).
+def duckduckgo(search, appName=""):
+    """Gives instant answers from DuckDuckGo (https://duckduckgo.com/).
 
     Keyword arguments:
-    search -- str; what you are searching for (case sensitive)
-    appName -- str; the name of the app you are using to access DuckDuckGo's API
+    search -- <str>; what you are searching for (case sensitive)
+    appName -- <str>; the name of your app
 
-    Return values:
-    data -- dictionary of the form {"AbstractText": topic summary,
-                                    "AbstractSource": name of <AbstractText> source,
-                                    "Heading": name of topic that goes with <AbstractText>,
-                                    "Answer": instant answer,
-                                    "Definition": dictionary definition (may differ from <AbstractText>),
-                                    "DefinitionSource": name of <Definition> source,
-                                    "DefinitionURL": deep link to expanded definition page in <DefinitionSource>
-                                    "URL": URL associated with <AbstractText>,
-                                    "URLText": text from <FirstURL>}
-            Only items containing data will be returned. All data will be of type str.
+    Return value:
+    {
+        "AbstractText": <str>; topic summary,
+        "AbstractSource": <str>; name of <AbstractText> source,
+        "Heading": <str>; name of topic that goes with <AbstractText>,
+        "Answer": <str>; instant answer,
+        "Definition": <str>; dictionary definition (may differ from
+                      <AbstractText>),
+        "DefinitionSource": <str>; name of <Definition> source,
+        "DefinitionURL": <str>; deep link to expanded definition page in
+                         <DefinitionSource>
+        "URL": <str>; URL associated with <AbstractText>,
+        "URLText": <str>; text from <FirstURL>
+    }
     """
-    data = requests.get("http://api.duckduckgo.com/?q={}&format=json&t={}".format(search, appName))
-    data = json.loads(data.text)
+    url = "http://api.duckduckgo.com/?q={}&format=json&t={}"
+    url = url.format(search, appName)
+    data = requests.get(url).text
+    data = json.loads(data)
     items = {"AbstractText": data["AbstractText"],
              "AbstractSource": data["AbstractSource"],
              "Heading": data["Heading"],
@@ -32,11 +37,7 @@ def duckduckgo(search, appName = ""):
              "Definition": data["Definition"],
              "DefinitionSource": data["DefinitionSource"],
              "DefinitionURL": data["DefinitionURL"]}
-    info = {}
-    for item in items:
-        if len(items[item]) > 0:
-            info[item] = items[item]
-    if len(data["Results"]) > 0:
-        info["URL"] = data["Results"][0]["FirstURL"]
-        info["URLText"] = data["Results"][0]["Text"]
-    return info
+    exists = True if len(data["Results"]) > 0 else False
+    items["URL"] = data["Results"][0]["FirstURL"] if exists else ""
+    items["URLText"] = data["Results"][0]["Text"] if exists else ""
+    return items

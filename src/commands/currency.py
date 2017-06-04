@@ -4,21 +4,41 @@ import requests
 
 
 def convert(apiKey, fromCode, toCode):
-    """Gives how much <toCode> is equal to 1 <fromCode> (currency conversion rate).
+    """Gives the currency conversion from <fromCode> to <toCode>.
+
+    Get the API key from https://www.exchangerate-api.com/.
+    Currency codes must be from ISO 4217 Three Letter Currency Codes.
 
     Keyword arguments:
-    apiKey -- str; the https://www.exchangerate-api.com/ api key
-    fromCode -- str; the code from ISO 4217 Three Letter Currency Codes to use as the base conversion
-    toCode -- str; the code from ISO 4217 Three Letter Currency Codes to convert <fromCode> to
+    apiKey -- <str>; the API key
+    fromCode -- <str>; the currency code for the base conversion
+    toCode -- <str>; the currency code to convert to
 
     Return values:
-    rate -- float; conversion rate of <fromCode> to <toCode>
-    unknown-code -- str; currency code unsupported by https://www.exchangerate-api.com/
-    invalid-key -- str; <apiKey> is either inactive or doesn't exist
-    quota-reached -- str; the supplied <apiKey> has exhausted its quota
+    successful conversion (<dict>):
+        {
+            "type": "success",
+            "response": <float>; the conversion rate
+        }
+    unsupported currency code (<dict>):
+        {
+            "type": "failure",
+            "response": "unknown-code"
+        }
+    <apiKey> is either inactive or doesn't exist (<dict>):
+        {
+            "type": "failure",
+            "response": "invalid-key"
+        }
+    <apiKey> has exhausted its quota (<dict>):
+        {
+            "type": "failure",
+            "response": "quota-reached"
+        }
     """
-    url = "https://v3.exchangerate-api.com/pair/{}/{}/{}".format(apiKey, fromCode, toCode)
-    data = requests.get(url).json()
-    if data["result"] != "success":
-        return data["error"]
-    return data["rate"]
+    url = "https://v3.exchangerate-api.com/pair/{}/{}/{}"
+    url = url.format(apiKey, fromCode, toCode)
+    response = requests.get(url).json()
+    if response["result"] != "success":
+        return {"type": "failure", "response": response["error"]}
+    return {"type": "success", "response": response["rate"]}

@@ -11,59 +11,66 @@ class HackChat:
     """This class receives and sends data from and to https://hack.chat.
 
     Usage:
-    Access the <onlineUsers> property to get a list of the users currently online in the channel.
-    Data received by the callback function will have one of the following formats. More formats exist but those are
-    exclusive to the functions in this class accessed by you. All data returned will be of type str.
+    The <onlineUsers> attribute is a <list> of the users currently
+    online in the channel.
+    Data received by the callback function without explicit access of
+    functions in this class will have one of the following formats.
     {
         "type": "message",
-        "nick": <senders' nickname>,
-        "text": <senders' message>,
-        "trip": <the senders' tripcode if the sender has one>
+        "nick": <str>; the senders' nickname,
+        "text": <str>; the senders' message,
+        "trip": <str>; the senders' tripcode if the sender has one
     }
     {
         "type": "online add",
-        "nick": <nickname of user who just joint the channel>
+        "nick": <str>; nickname of user who just joint the channel
     }
     {
         "type": "online remove",
-        "nick": <nickname of user who just left the channel>
+        "nick": <str>; nickname of user who just left the channel
     }
     {
         "type": "invite",
-        "nick": <nickname of user who invited you to a channel (might be your own if you invited someone else)>,
-        "channel": <name of the channel invited to>
+        "nick": <str>; the nickname of user who invited you to a channel
+                (might be your own if you invited someone else),
+        "channel": <str>; name of the channel invited to
     }
     {
         "type": "banned",
-        "nick": <nickname of banned user>
+        "nick": <str>; the nickname of the banned user
     }
     {
         "type": "unbanned",
-        "ip": <ip of unbanned user
+        "ip": <str>; the IP address of the unbanned user
     }
     {
         "type": "broadcast",
-        "text": <the message broadcasted to https://hack.chat>
+        "text": <str>; the message broadcasted to https://hack.chat
     }
     {
         "type": "warn",
-        "warning": <explanation of why you have been warned>
+        "warning": <str>; an explanation of why you have been warned
     }
-    The following warnings may be given (more warnings exist for the explicit usage of some functions in this class):
-    "Nickname must consist of up to 24 letters, numbers, and underscores"
-    "Cannot impersonate the admin"
-    "Nickname taken"
-    "Your IP is being rate-limited or blocked."
+    The following warnings may be given:
+    <"Nickname must consist of up to 24 letters, numbers, and "
+     + "underscores">
+    <"Cannot impersonate the admin">
+    <"Nickname taken">
+    <"Your IP is being rate-limited or blocked.">
 
     Example:
         import connection
 
 
-        def on_message(connector, data): # Make a callback function with two parameters.
-            print(data) # The second parameter (<data>) is the data received.
+        # Make a callback function with two parameters.
+        def on_message(connector, data):
+            # The second parameter (<data>) is the data received.
+            print(data)
             print(connector.onlineUsers)
-            if data["type"] == "online add": # Checks if someone joined the channel.
-                connector.send("Hello {}".format(data["nick"])) # Sends a greeting the person joining the channel.
+            # Checks if someone joined the channel.
+            if data["type"] == "online add":
+                # Sends a greeting the person joining the channel.
+                connector.send("Hello {}".format(data["nick"]))
 
 
         if __name__ == "__main__":
@@ -71,14 +78,14 @@ class HackChat:
             hackChat.join("botDev")
     """
 
-    def __init__(self, callback, nick, pwd = "", url = "wss://hack.chat/chat-ws"):
+    def __init__(self, callback, nick, pwd="", url="wss://hack.chat/chat-ws"):
         """Initializes values.
 
         Keyword arguments:
-        callback -- function; the name of the function to receive data from https://hack.chat
-        nick -- str; the nickname to use upon connecting
-        pwd -- str; the password that generates you a tripcode upon entering
-        url -- str; the hack.chat instance
+        callback -- <function>; name of function to receive data
+        nick -- <str>; nickname to use upon connecting
+        pwd -- <str>; password that generates a tripcode upon entering
+        url -- <str>; the hack.chat instance
         """
         self.callback = callback
         self.nick = nick
@@ -90,32 +97,36 @@ class HackChat:
         threading.Thread(target = self._run).start()
 
     def join(self, channel):
-        """Joins the channel <channel> (str) on https://hack.chat.
+        """Joins the channel <channel> (<str>) on https://hack.chat.
 
-        The following data may be received by the callback function as a result of using this function.
+        The following data may be received by the callback function as a
+        result of using this function.
         {
             "type": "warn",
-            "warning": "You are joining channels too fast. Wait a moment and try again."
+            "warning": "You are joining channels too fast. Wait a " +
+                       + "moment and try again."
         }
         """
-        self._send_packet({"cmd": "join", "channel": channel, "nick": "{}#{}".format(self.nick, self.pwd)})
+        nick = "{}#{}".format(self.nick, self.pwd)
+        self._send_packet({"cmd": "join", "channel": channel, "nick": nick})
 
     def _send_packet(self, data):
-        """Sends <data> (dict) to https://hack.chat."""
+        """Sends <data> (<dict>) to https://hack.chat."""
         self._ws.send(json.dumps(data))
 
     def _ping(self):
-        """This function periodically pings the server to retain the websocket connection."""
+        """Periodically pings to retain the websocket connection."""
         while True:
             time.sleep(60)
             self._send_packet({"cmd": "ping"})
 
     def _run(self):
-        """This function sends and receives data from https://hack.chat to the callback function."""
+        """Sends and receives data to the callback function."""
         while True:
             result = json.loads(self._ws.recv())
             if result["cmd"] == "chat":
-                data = {"type": "message", "nick": result["nick"], "text": result["text"]}
+                data = {"type": "message", "nick": result["nick"],
+                        "text": result["text"]}
                 if "trip" in result:
                     data["trip"] = result["trip"]
                 self.callback(self, data)
@@ -123,10 +134,12 @@ class HackChat:
                 self.onlineUsers += result["nicks"]
             elif result["cmd"] == "onlineAdd":
                 self.onlineUsers.append(result["nick"])
-                self.callback(self, {"type": "online add", "nick": result["nick"]})
+                self.callback(self, {"type": "online add",
+                                     "nick": result["nick"]})
             elif result["cmd"] == "onlineRemove":
                 self.onlineUsers.remove(result["nick"])
-                self.callback(self, {"type": "online remove", "nick": result["nick"]})
+                self.callback(self, {"type": "online remove",
+                                     "nick": result["nick"]})
             elif result["cmd"] == "info" and " invited " in result["text"]:
                 if "You invited " in result["text"]:
                     name = self.nick
@@ -135,18 +148,25 @@ class HackChat:
                     name = result["text"][:space.start()]
                 link = re.search("\?", result["text"])
                 channel = result["text"][link.end():]
-                self.callback(self, {"type": "invite", "nick": name, "channel": channel})
+                self.callback(self, {"type": "invite", "nick": name,
+                                     "channel": channel})
             elif result["cmd"] == "info" and " IPs " in result["text"]:
                 data = result["text"].split()
-                self.callback(self, {"type": "stats", "IPs": data[0], "channels": data[4]})
+                self.callback(self, {"type": "stats", "IPs": data[0],
+                                     "channels": data[4]})
             elif result["cmd"] == "info" and "Banned " in result["text"]:
-                self.callback(self, {"type": "banned", "nick": result["text"][len("Banned "):]})
+                nick = result["text"][len("Banned "):]
+                self.callback(self, {"type": "banned", "nick": nick})
             elif result["cmd"] == "info" and "Unbanned " in result["text"]:
-                self.callback(self, {"type": "unbanned", "ip": result["text"][len("Unbanned "):]})
-            elif result["cmd"] == "info" and "Server broadcast: " in result["text"]:
-                self.callback(self, {"type": "broadcast", "text": result["text"][len("Server broadcast: "):]})
+                ip = result["text"][len("Unbanned "):]
+                self.callback(self, {"type": "unbanned", "ip": ip})
+            elif (result["cmd"] == "info"
+                  and "Server broadcast: " in result["text"]):
+                txt = result["text"][len("Server broadcast: "):]
+                self.callback(self, {"type": "broadcast", "text": txt})
             elif result["cmd"] == "info":
-                self.callback(self, {"type": "list users", "text": result["text"]})
+                self.callback(self, {"type": "list users",
+                                     "text": result["text"]})
             elif result["cmd"] == "warn":
                 data = {"type": "warn", "warning": result["text"]}
                 if "Could not find " in result["text"]:
@@ -155,25 +175,29 @@ class HackChat:
                 self.callback(self, data)
 
     def send(self, msg):
-        """Use this to send a message <msg> (str) to the channel connected.
+        """Send <msg> (<str>) to the channel that last sent data.
 
-        The following data may be sent to the callback function:
+        The following data may be sent to the callback function.
         {
             "type": "warn",
-            "warning": "You are sending too much text. Wait a moment and try again.\n"
-                       + "Press the up arrow key to restore your last message."
+            "warning": "You are sending too much text. Wait a moment "
+                       + "and try again.\nPress the up arrow key to "
+                       + "restore your last message."
         }
         """
         self._send_packet({"cmd": "chat", "text": msg})
 
     def invite(self, nick):
-        """This sends an invite to the person <nick> (str) to join a randomly generated channel.
+        """Invites <nick> (<str>) to a randomly generated channel.
 
-        This invite will only be visible to <nick>. The callback function will receive the data such as the channel.
-        A warning having one of the following formats might be sent to the callback function.
+        This invite will only be visible to <nick>. The callback
+        function will receive the data such as the channel.
+        A warning having one of the following formats might be sent to
+        the callback function.
         {
             "type": "warn",
-            "warning": "You are sending invites too fast. Wait a moment before trying again."
+            "warning": "You are sending invites too fast. Wait a "
+                       + "moment before trying again."
         }
         {
             "type": "warn",
@@ -183,26 +207,28 @@ class HackChat:
         self._send_packet({"cmd": "invite", "nick": nick})
 
     def stats(self):
-        """This sends the number of unique IPs and channels on https://hack.chat to the callback function.
+        """Sends https://hack.chat statistics to the callback function.
 
-        Data of the following format will be sent to the callback function as a result of requesting stats.
+        The following data will be sent to the callback function.
         {
             "type": "stats",
-            "IPs": <number of unique IPs connected to https://hack.chat>,
-            "channels": <number of channels in use on https://hack.chat>
+            "IPs": <str>; number of unique IPs connected to
+                   https://hack.chat>,
+            "channels": <str>; number of channels on https://hack.chat
         }
         """
         self._send_packet({"cmd": "stats"})
 
     def ban(self, nick):
-        """Bans the user <nick> (str) from https://hack.chat for 24 hours.
+        """Bans <nick> (<str>) from https://hack.chat for 24 hours.
 
-        <pwd> must be that of a moderators' or admins'. You cannot ban a moderator or admin.
-        The callback function will receive data as a result having one of the following formats:
+        <pwd> must be that of a moderators' or admins' to use this.
+        You cannot ban a moderator or admin.
+        The callback function will receive one of the following.
         {
             "type": "warn",
             "warning": "user to ban not found",
-            "nick": <the nickname of the user who was to be banned but couldn't be found>
+            "nick": <str>; nickname of user to ban that wasn't found
         }
         {
             "type": "warn",
@@ -212,30 +238,38 @@ class HackChat:
         self._send_packet({"cmd": "ban", "nick": nick})
 
     def unban(self, ip):
-        """Unbans the user having the IP <ip> (str) (<pwd> must be that of a moderators' or admins').
+        """Unbans the IP <ip> (<str>)
 
-        The callback function will receive data as a result if <nick> was unbanned having the following format.
+        <pwd> must be that of a moderators' or admins' to use this.
+
+        The callback function will receive the following data.
         {
             "type": "unbanned"
-            "ip": <ip of unbanned user>
+            "ip": <str>; IP of unbanned user
         }
         """
         self._send_packet({"cmd": "unban", "nick": nick})
 
     def list_users(self):
-        """This lists the users (<pwd> must be that of an admins').
+        """Lists users (<pwd> must be that of an admins' to use this).
 
-        This sends data of the form {"type": "list users", "text": <online users>} to the callback function.
+        The callback function will receive the following data.
+        {
+            "type": "list users",
+            "text": <str>; online users
+        }
         """
         self._send_packet({"cmd": "listUsers"})
 
     def broadcast(self, text):
-        """Sends <text> (str) to https://hack.chat with this function (<pwd> must be that of an admins').
+        """Sends <text> (<str>) to https://hack.chat.
+
+        <pwd> must be that of an admins' to use this.
 
         The following data will be sent to the callback function.
         {
             "type": "broadcast",
-            "text": <the message broadcasted>
+            "text": <str>; the message broadcasted
         }
         """
         self._send_packet({"cmd": "broadcast", "text": text})

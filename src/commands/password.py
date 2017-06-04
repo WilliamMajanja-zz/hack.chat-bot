@@ -6,18 +6,20 @@ import string
 import datetime
 
 
-def strengthen(pwd, spChars = True):
-    """Returns a strengthened password (str).
+def strengthen(pwd, spChars=True):
+    """Returns a strengthened password (<str>).
 
     Keyword arguments:
-    pwd -- str; the password to strengthen
-    spChars -- bool; specifies if special characters are allowed
+    pwd -- <str>; the password to strengthen
+    spChars -- <bool>; specifies if special characters can be used in
+               the password
     """
     random.seed(datetime.datetime.now())
-    spCharsSet = ("{", "}", "(", ")", "[", "]", "#", ":", ";", "^", ",", ".", "?", "!", "|", "&", "_", "`", "~", "@",
-                  "$", "%", "/", "\\", "+", "-", "*", "=", "'", "\"")
+    spCharsSet = ("{", "}", "(", ")", "[", "]", "#", ":", ";", "^", ",", ".",
+                  "?", "!", "|", "&", "_", "`", "~", "@", "$", "%", "/", "\\",
+                  "+", "-", "*", "=", "'", "\"")
     if spChars and not re.search(r"[^a-zA-Z0-9]", pwd):
-        pwd += spCharsSet[random.randint(0, 29)];
+        pwd += spCharsSet[random.randint(0, 29)]
     if not re.search(r"[0-9]", pwd):
         pwd = re.sub("o|O", "0", pwd)
         pwd = re.sub("i|I", "1", pwd)
@@ -34,13 +36,15 @@ def strengthen(pwd, spChars = True):
         pwd += ltr[random.randint(0, 25)] + ltr[random.randint(0, 25)].upper()
     if not re.findall(r"[a-z]", pwd):
         span = re.search(r"[A-Z]", pwd)
-        pwd = re.sub(pwd[span.start():span.end()], pwd[span.start():span.end()].lower(), pwd, 1)
+        char = pwd[span.start():span.end()]
+        pwd = re.sub(char, char.lower(), pwd, 1)
     if not re.findall(r"[A-Z]", pwd):
         span = re.search(r"[a-z]", pwd)
-        pwd = re.sub(pwd[span.start():span.end()], pwd[span.start():span.end()].upper(), pwd, 1)
+        char = pwd[span.start():span.end()]
+        pwd = re.sub(char, char.upper(), pwd, 1)
     if len(pwd) < 12:
         chars = ltr + ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
-        if spCharsSet:
+        if spChars:
             chars += spCharsSet
         for char in range(12 - len(pwd)):
             pwd += chars[random.randint(0, len(chars) - 1)]

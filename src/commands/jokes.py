@@ -5,5 +5,6 @@ import json
 
 
 def yo_momma():
-    """Returns a random yo momma joke (str)."""
-    return json.loads(requests.get("http://api.yomomma.info/").text)["joke"]
+    """Returns a random yo momma joke (<str>)."""
+    data = requests.get("http://api.yomomma.info/").text
+    return json.loads(data)["joke"]
