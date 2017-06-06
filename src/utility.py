@@ -12,10 +12,7 @@ def shorten(string, maxLen, last):
     string -- <str>; the text to shorten
     maxLen -- <int>; the maximum number of characters <string> can be
     last -- <str>; truncates <string> to <last> found closest before
-            <maxLen>
-
-    If the length of <string> is shorter than <maxLen>, <string> will be
-    returned.
+            <maxLen> if <maxLen> is less than the length of <string>
 
     Example:
     # Shortens <sentence> to the <"."> found just before 45 characters
@@ -37,6 +34,28 @@ def shorten(string, maxLen, last):
         string = string[found.start():]
     string = string[::-1]
     return string
+
+
+def shorten_lines(string, lineLen, maxLines):
+    """Truncates <string> to a certain number of lines.
+
+    Keyword arguments:
+    string -- <str>; the <str> to shorten
+    lineLen -- <int>; the number of characters that constitute one line
+    maxLines -- <int>; the number of lines <string> can be at most
+    """
+    lines = string.split("\n")
+    lineCount = 0
+    newLines = ""
+    for line in lines:
+        length = int(len(line) / lineLen) if len(line) > lineLen else 1
+        if len(line) > length * lineLen:
+            length += 1
+        lineCount += length
+        if lineCount > maxLines:
+            break
+        newLines += "{}\n".format(line)
+    return newLines
 
 
 def identical_item(list1, list2):
