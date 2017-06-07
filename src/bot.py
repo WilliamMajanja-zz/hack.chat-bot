@@ -28,16 +28,15 @@ def callback(hackChat, info):
     if info["type"] == "invite":
         join(info["channel"])
     elif info["type"] == "message":
-        nick = info["nick"]
-        post(hackChat, nick)
+        post(hackChat, info["nick"])
         if "trip" in info:
-            log_trip_code(nick, info["trip"])
+            log_trip_code(info["nick"], info["trip"])
         space = re.search(r"\s", info["text"].strip())
         msg = info["text"][space.end():].strip() if space else None
         if info["text"][:len(config["trigger"])] == config["trigger"]:
             check = space.start() if space else len(info["text"])
             cmd = info["text"][len(config["trigger"]):check]
-            message(hackChat, nick, cmd, msg)
+            message(hackChat, info["nick"], cmd, msg)
     elif info["type"] == "online add":
         post(hackChat, info["nick"])
     elif info["type"] == "stats":
