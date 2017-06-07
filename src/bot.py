@@ -35,16 +35,12 @@ def callback(hackChat, info):
             check = space.start() if space else len(info["text"])
             cmd = info["text"][len(config["trigger"]):check]
             message(hackChat, nick, cmd, msg)
+    elif info["type"] == "online add":
+        post(hackChat, info["nick"])
     elif info["type"] == "stats":
         stats(hackChat, info["IPs"], info["channels"])
     elif info["type"] == "warn":
         warn(info["warning"])
-
-
-def warn(warning):
-    """Handles warnings sent from the callback function."""
-    data = "\nWARNING at {}:\n{}"
-    print(data.format(datetime.datetime.now(), warning))
 
 
 def join(channel):
@@ -54,10 +50,31 @@ def join(channel):
     connector.join(channel)
 
 
+def post(hackChat, nick):
+    """Sends messages saved for <nick> sent from the callback function."""
+    with open("messages.json", "r") as f:
+        messages = json.loads(f.read())
+    if nick in messages:
+        reply = ""
+        for msg in messages[nick]:
+            reply += ("@{} at {} sent: ".format(msg["sender"], msg["datetime"])
+                      + "{}\n".format(msg["message"]))
+        messages.pop(nick)
+        with open("messages.json", "w") as f:
+            json.dump(messages, f, indent = 4)
+        hackChat.send("@{} you have messages\n{}".format(nick, reply))
+
+
 def stats(hackChat, ipCount, channels):
     """Sends statistics sent from the callback function."""
-    data = "There are {} unique IPs in {} channels."
-    hackChat.send(data.format(ipCount, channels))
+    data = "There are {} unique IPs in {} channels.".format(ipCount, channels)
+    hackChat.send(data)
+
+
+def warn(warning):
+    """Handles warnings sent from the callback function."""
+    data = "\nWARNING at {}:\n{}"
+    print(data.format(datetime.datetime.now(), warning))
 
 
 def message(hackChat, nick, cmd, msg):
@@ -72,6 +89,8 @@ def message(hackChat, nick, cmd, msg):
         joke(hackChat, nick, cmd, msg)
     elif cmd[:len("katex")] == "katex":
         katex_converter(hackChat, nick, cmd, msg)
+    elif cmd[:len("msg")] == "msg":
+        messenger(hackChat, nick, cmd, msg)
     elif cmd == "password":
         strengthen(hackChat, nick, cmd, msg)
     elif cmd == "poem" or cmd == "poet":
@@ -90,6 +109,31 @@ def message(hackChat, nick, cmd, msg):
         translate(hackChat, nick, cmd, msg)
     elif cmd == "urban":
         urban(hackChat, nick, cmd, msg)
+
+
+def answer(hackChat, nick, cmd, msg):
+    """Handles searches sent from the callback function."""
+    if msg:
+        results = search.duckduckgo(msg, "hack.chat bot")
+        reply = ""
+        if len(results["URL"]) > 0:
+            reply += "{} ".format(results["URL"])
+        if len(results["Heading"]) > 0:
+            reply += "{}: ".format(results["Heading"])
+        if len(results["Answer"]) > 0:
+            reply += results["Answer"]
+        elif len(results["AbstractText"]) > 0:
+            reply += results["AbstractText"]
+        else:
+            reply = ""
+        tell = "@{} ".format(nick)
+        reply = utility.shorten(reply, maxChars - len(tell), ".")
+        if not reply:
+            reply = "Sorry, I couldn't find anything."
+        hackChat.send(tell + reply)
+    else:
+        hackChat.send("@{} instant answers (e.g., ".format(nick)
+                      + "{}search pokemon ruby)".format(config["trigger"]))
 
 
 def define(hackChat, nick, cmd, msg):
@@ -159,14 +203,32 @@ def katex_converter(hackChat, nick, cmd, msg):
         hackChat.send(reply)
 
 
-def strengthen(hackChat, nick, cmd, msg):
-    """Handles passwords sent from the callback function."""
-    if msg:
-        pwd = password.strengthen(msg)
-        hackChat.send("@{} {}".format(nick, pwd))
+def messenger(hackChat, nick, cmd, msg):
+    """Handles messages to be sent sent from the callback function.
+
+    This sends messages to people when they're next active.
+    """
+    info = cmd.split(":")
+    if len(info) == 2 and info[1] and msg:
+        data = {
+            "sender": nick,
+            "datetime": str(datetime.datetime.now()),
+            "message": msg
+        }
+        with open("messages.json", "r") as f:
+            messages = json.loads(f.read())
+        if info[1] in messages:
+            messages[info[1]].append(data)
+        else:
+            messages[info[1]] = [data]
+        with open("messages.json", "w") as f:
+            json.dump(messages, f, indent = 4)
+        hackChat.send("@{} {} will get your message the ".format(nick, info[1])
+                      + "next time they message or join a channel.")
     else:
-        hackChat.send("@{} strengthens a password (e.g., ".format(nick)
-                      + "{}password gum)".format(config["trigger"]))
+        hackChat.send("@{} sends a message to a user the next ".format(nick)
+                      + "time they send a message or join a channel (e.g., "
+                      + "{}msg:ben how are you?)".format(config["trigger"]))
 
 
 def poem(hackChat, nick, cmd, msg):
@@ -216,29 +278,24 @@ def rate(hackChat, nick, cmd, msg):
                       + "gives 1 USD = 64 INR)")
 
 
-def answer(hackChat, nick, cmd, msg):
-    """Handles searches sent from the callback function."""
+def source(hackChat, nick, cmd, msg):
+    """Handles the bots' source sent from the callback function."""
+    hackChat.send("@{} {}".format(nick, config["github"]))
+
+
+def strengthen(hackChat, nick, cmd, msg):
+    """Handles passwords sent from the callback function."""
     if msg:
-        results = search.duckduckgo(msg, "hack.chat bot")
-        reply = ""
-        if len(results["URL"]) > 0:
-            reply += "{} ".format(results["URL"])
-        if len(results["Heading"]) > 0:
-            reply += "{}: ".format(results["Heading"])
-        if len(results["Answer"]) > 0:
-            reply += results["Answer"]
-        elif len(results["AbstractText"]) > 0:
-            reply += results["AbstractText"]
-        else:
-            reply = ""
-        tell = "@{} ".format(nick)
-        reply = utility.shorten(reply, maxChars - len(tell), ".")
-        if not reply:
-            reply = "Sorry, I couldn't find anything."
-        hackChat.send(tell + reply)
+        pwd = password.strengthen(msg)
+        hackChat.send("@{} {}".format(nick, pwd))
     else:
-        hackChat.send("@{} instant answers (e.g., ".format(nick)
-                      + "{}search pokemon ruby)".format(config["trigger"]))
+        hackChat.send("@{} strengthens a password (e.g., ".format(nick)
+                      + "{}password gum)".format(config["trigger"]))
+
+
+def get_stats(hackChat, nick, cmd, msg):
+    """Handles statistics sent from the callback function."""
+    hackChat.stats()
 
 
 def translate(hackChat, nick, cmd, msg):
@@ -281,16 +338,6 @@ def translate(hackChat, nick, cmd, msg):
                       + "{}\ne.g., ".format(", ".join(languages.keys()))
                       + "{}".format(config["trigger"])
                       + "translate:english:spanish I have a holiday!\n")
-
-
-def source(hackChat, nick, cmd, msg):
-    """Handles the bots' source sent from the callback function."""
-    hackChat.send("@{} {}".format(nick, config["github"]))
-
-
-def get_stats(hackChat, nick, cmd, msg):
-    """Handles statistics sent from the callback function."""
-    hackChat.stats()
 
 
 def toss(hackChat, nick, cmd, msg):
@@ -355,6 +402,9 @@ if not os.path.isfile("config.json"):
     print()
     with open("config.json", "w") as f:
         json.dump(data, f, indent = 4)
+if not os.path.isfile("messages.json"):
+    with open("messages.json", "w") as f:
+        json.dump({}, f, indent = 4)
 with open("config.json", "r") as f:
     config = json.loads(f.read())
 if not config["name"] or not config["channel"] or not config["trigger"]:
@@ -363,8 +413,8 @@ if not config["name"] or not config["channel"] or not config["trigger"]:
 charsPerLine = 88
 maxLines = 8
 maxChars = charsPerLine * maxLines
-commands = ["h", "help", "join", "joke", "katex", "poem", "poet", "password",
-            "search", "stats", "toss", "urban"]
+commands = ["h", "help", "join", "joke", "katex", "msg", "poem", "poet",
+            "password", "search", "stats", "toss", "urban"]
 if config["github"]:
     commands.append("source")
 if config["oxfordAppId"] and config["oxfordAppKey"]:
