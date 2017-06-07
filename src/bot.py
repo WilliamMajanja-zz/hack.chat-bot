@@ -30,8 +30,10 @@ def callback(hackChat, info):
     elif info["type"] == "message":
         nick = info["nick"]
         post(hackChat, nick)
+        if "trip" in info:
+            log_trip_code(nick, info["trip"])
         space = re.search(r"\s", info["text"].strip())
-        msg = info["text"][space.end():] if space else None
+        msg = info["text"][space.end():].strip() if space else None
         if info["text"][:len(config["trigger"])] == config["trigger"]:
             check = space.start() if space else len(info["text"])
             cmd = info["text"][len(config["trigger"]):check]
@@ -49,6 +51,18 @@ def join(channel):
     connector = connection.HackChat(callback, config["name"],
                                     config["password"], config["url"])
     connector.join(channel)
+
+
+def log_trip_code(nick, trip):
+    """Logs trip codes along with their nicknames for verification."""
+    with open("trip_codes.json", "r") as f:
+        verifiers = json.loads(f.read())
+    if trip in verifiers and nick not in verifiers[trip]:
+        verifiers[trip].append(nick)
+    elif trip not in verifiers:
+        verifiers[trip] = [nick]
+    with open("trip_codes.json", "w") as f:
+        json.dump(verifiers, f, indent = 4)
 
 
 def post(hackChat, nick):
@@ -110,6 +124,8 @@ def message(hackChat, nick, cmd, msg):
         translate(hackChat, nick, cmd, msg)
     elif cmd == "urban":
         urban(hackChat, nick, msg)
+    elif cmd == "verify":
+        verify(hackChat, nick, msg)
 
 
 def answer(hackChat, nick, msg):
@@ -365,7 +381,29 @@ def urban(hackChat, nick, msg):
                       + "{}urban covfefe)".format(config["trigger"]))
 
 
+def verify(hackChat, nick, msg):
+    """Verifies trip codes' holdees sent from the callback function."""
+    if msg:
+        with open("trip_codes.json", "r") as f:
+            verifiers = json.loads(f.read())
+        if msg in verifiers:
+            nicks = ", ".join(verifiers[msg])
+            hackChat.send("@{} {} has the aliases {}".format(nick, msg, nicks))
+        else:
+            hackChat.send("@{} no aliases with that trip code ".format(nick)
+                          + "were found")
+    else:
+        hackChat.send("@{} tells the trip codes' aliases (e.g., ".format(nick)
+                      + "{}dIhdzE)".format(config["trigger"]))
+
+
 random.seed(datetime.datetime.now())
+if not os.path.isfile("messages.json"):
+    with open("messages.json", "w") as f:
+        json.dump({}, f, indent = 4)
+if not os.path.isfile("trip_codes.json"):
+    with open("trip_codes.json", "w") as f:
+        json.dump({}, f, indent = 4)
 if not os.path.isfile("config.json"):
     data = {}
     print("You can change your configuration later in the file config.json "
@@ -405,9 +443,6 @@ if not os.path.isfile("config.json"):
     print()
     with open("config.json", "w") as f:
         json.dump(data, f, indent = 4)
-if not os.path.isfile("messages.json"):
-    with open("messages.json", "w") as f:
-        json.dump({}, f, indent = 4)
 with open("config.json", "r") as f:
     config = json.loads(f.read())
 if not config["name"] or not config["channel"] or not config["trigger"]:
@@ -417,7 +452,7 @@ charsPerLine = 88
 maxLines = 8
 maxChars = charsPerLine * maxLines
 commands = ["h", "help", "join", "joke", "katex", "msg", "poem", "poet",
-            "password", "search", "stats", "toss", "urban"]
+            "password", "search", "stats", "toss", "urban", "verify"]
 if config["github"]:
     commands.append("source")
 if config["oxfordAppId"] and config["oxfordAppKey"]:
