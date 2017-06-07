@@ -29,6 +29,7 @@ def callback(hackChat, info):
         join(info["channel"])
     elif info["type"] == "message":
         nick = info["nick"]
+        post(hackChat, nick)
         space = re.search(r"\s", info["text"].strip())
         msg = info["text"][space.end():] if space else None
         if info["text"][:len(config["trigger"])] == config["trigger"]:
@@ -57,7 +58,7 @@ def post(hackChat, nick):
     if nick in messages:
         reply = ""
         for msg in messages[nick]:
-            reply += ("@{} at {} sent: ".format(msg["sender"], msg["datetime"])
+            reply += ("@{} sent at {}: ".format(msg["sender"], msg["datetime"])
                       + "{}\n".format(msg["message"]))
         messages.pop(nick)
         with open("messages.json", "w") as f:
@@ -210,9 +211,11 @@ def messenger(hackChat, nick, cmd, msg):
     """
     info = cmd.split(":")
     if len(info) == 2 and info[1] and msg:
+        dt = datetime.datetime.now()
+        dt = "{}:{} {}".format(dt.hour, dt.minute, dt.date())
         data = {
             "sender": nick,
-            "datetime": str(datetime.datetime.now()),
+            "datetime": dt,
             "message": msg
         }
         with open("messages.json", "r") as f:
