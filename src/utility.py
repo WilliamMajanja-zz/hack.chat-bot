@@ -20,7 +20,7 @@ def shorten(string, maxLen, last):
     sentence = "Hi everyone! My name is Indiana Jones. How are you?"
     shortened = shorten(sentence, 45, ".")
     """
-    if len(string) < maxLen:
+    if len(string) <= maxLen:
         return string
     string = string[:maxLen]
     incompatibilities = (".", "^", "$", "*", "+", "?", "(", ")", "[", "]", "{",
