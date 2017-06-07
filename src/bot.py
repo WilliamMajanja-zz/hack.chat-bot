@@ -81,38 +81,38 @@ def warn(warning):
 def message(hackChat, nick, cmd, msg):
     """Handles commands sent from the callback function."""
     if cmd == "define" and "define" in commands:
-        define(hackChat, nick, cmd, msg)
+        define(hackChat, nick, msg)
     elif (cmd == "h" and not msg) or cmd == "help":
-        helper(hackChat, nick, cmd, msg)
+        help_(hackChat, nick)
     elif cmd == "join":
-        joiner(hackChat, nick, cmd, msg)
+        joiner(hackChat, nick, msg)
     elif cmd == "joke":
-        joke(hackChat, nick, cmd, msg)
+        joke(hackChat, nick)
     elif cmd[:len("katex")] == "katex":
         katex_converter(hackChat, nick, cmd, msg)
     elif cmd[:len("msg")] == "msg":
         messenger(hackChat, nick, cmd, msg)
     elif cmd == "password":
-        strengthen(hackChat, nick, cmd, msg)
+        strengthen(hackChat, nick, msg)
     elif cmd == "poem" or cmd == "poet":
         poem(hackChat, nick, cmd, msg)
     elif cmd[:len("rate")] == "rate" and "rate" in commands:
-        rate(hackChat, nick, cmd, msg)
+        rate(hackChat, nick, cmd)
     elif cmd == "search":
-        answer(hackChat, nick, cmd, msg)
+        answer(hackChat, nick, msg)
     elif cmd == "source" and "source" in commands:
-        source(hackChat, nick, cmd, msg)
+        source(hackChat, nick)
     elif cmd == "stats":
-        get_stats(hackChat, nick, cmd, msg)
+        get_stats(hackChat)
     elif cmd == "toss":
-        toss(hackChat, nick, cmd, msg)
+        toss(hackChat, nick)
     elif cmd[:len("translate")] == "translate" and "translate" in commands:
         translate(hackChat, nick, cmd, msg)
     elif cmd == "urban":
-        urban(hackChat, nick, cmd, msg)
+        urban(hackChat, nick, msg)
 
 
-def answer(hackChat, nick, cmd, msg):
+def answer(hackChat, nick, msg):
     """Handles searches sent from the callback function."""
     if msg:
         results = search.duckduckgo(msg, "hack.chat bot")
@@ -137,7 +137,7 @@ def answer(hackChat, nick, cmd, msg):
                       + "{}search pokemon ruby)".format(config["trigger"]))
 
 
-def define(hackChat, nick, cmd, msg):
+def define(hackChat, nick, msg):
     """Handles definitions sent from the callback function."""
     if msg:
         data = oxford.define(msg)
@@ -151,14 +151,14 @@ def define(hackChat, nick, cmd, msg):
                                                           config["trigger"]))
 
 
-def helper(hackChat, nick, cmd, msg):
+def help_(hackChat, nick):
     """Gives help sent from the callback function."""
     joiner = " {}".format(config["trigger"])
     reply = joiner.join(sorted(commands))
     hackChat.send("@{} {}{}".format(nick, config["trigger"], reply))
 
 
-def joiner(hackChat, nick, cmd, msg):
+def joiner(hackChat, nick, msg):
     """Joins a channel sent from the callback function."""
     if msg:
         join(msg)
@@ -168,7 +168,7 @@ def joiner(hackChat, nick, cmd, msg):
                       + "invite the bot via the sidebar.")
 
 
-def joke(hackChat, nick, cmd, msg):
+def joke(hackChat, nick):
     """Handles jokes sent from the callback function."""
     hackChat.send("@{} {}".format(nick, jokes.yo_momma()))
 
@@ -261,7 +261,7 @@ def poem(hackChat, nick, cmd, msg):
                           + "{}poet shakespeare)".format(config["trigger"]))
 
 
-def rate(hackChat, nick, cmd, msg):
+def rate(hackChat, nick, cmd):
     """Handles currency conversion sent from the callback function."""
     converted = False
     data = cmd.split(":") if ":" in cmd else None
@@ -281,12 +281,12 @@ def rate(hackChat, nick, cmd, msg):
                       + "gives 1 USD = 64 INR)")
 
 
-def source(hackChat, nick, cmd, msg):
+def source(hackChat, nick):
     """Handles the bots' source sent from the callback function."""
     hackChat.send("@{} {}".format(nick, config["github"]))
 
 
-def strengthen(hackChat, nick, cmd, msg):
+def strengthen(hackChat, nick, msg):
     """Handles passwords sent from the callback function."""
     if msg:
         pwd = password.strengthen(msg)
@@ -296,7 +296,7 @@ def strengthen(hackChat, nick, cmd, msg):
                       + "{}password gum)".format(config["trigger"]))
 
 
-def get_stats(hackChat, nick, cmd, msg):
+def get_stats(hackChat):
     """Handles statistics sent from the callback function."""
     hackChat.stats()
 
@@ -343,13 +343,13 @@ def translate(hackChat, nick, cmd, msg):
                       + "translate:english:spanish I have a holiday!\n")
 
 
-def toss(hackChat, nick, cmd, msg):
+def toss(hackChat, nick):
     """Handles tosses sent from the callback function."""
     result = "heads" if random.randint(0, 1) == 1 else "tails"
     hackChat.send("@{} {}".format(nick, result))
 
 
-def urban(hackChat, nick, cmd, msg):
+def urban(hackChat, nick, msg):
     """Handles urban definitions sent from the callback function."""
     if msg:
         data = dictionary.urban(msg)
