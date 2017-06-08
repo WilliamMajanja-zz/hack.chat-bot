@@ -28,6 +28,8 @@ def callback(hackChat, info):
     if info["type"] == "invite":
         join(info["channel"])
     elif info["type"] == "message":
+        if info["nick"] != config["name"]:
+            check_afk(hackChat, info["nick"], info["text"])
         post(hackChat, info["nick"])
         if "trip" in info:
             log_trip_code(info["nick"], info["trip"])
@@ -39,10 +41,28 @@ def callback(hackChat, info):
             message(hackChat, info["nick"], cmd, msg)
     elif info["type"] == "online add":
         post(hackChat, info["nick"])
+    elif info["type"] == "online remove":
+        if info["nick"] in afkUsers:
+            afkUsers.pop(info["nick"])
     elif info["type"] == "stats":
         stats(hackChat, info["IPs"], info["channels"])
     elif info["type"] == "warn":
         warn(info["warning"])
+
+
+def check_afk(hackChat, nick, msg):
+    """Checks AFK statuses sent from the callback function."""
+    if nick in afkUsers:
+        hackChat.send("@{} is back; reason for AFK: ".format(nick)
+                      + "{}".format(afkUsers[nick]))
+        afkUsers.pop(nick)
+    reply = ""
+    for user in afkUsers:
+        person = "@{}".format(user)
+        if person in msg:
+            reply += "{} is AFK; reason: {}\n".format(person, afkUsers[user])
+    if reply:
+        hackChat.send("@{}\n{}".format(nick, reply))
 
 
 def join(channel):
@@ -93,7 +113,9 @@ def warn(warning):
 
 def message(hackChat, nick, cmd, msg):
     """Handles commands sent from the callback function."""
-    if cmd == "define" and "define" in commands:
+    if cmd == "afk":
+        afk(hackChat, nick, msg)
+    elif cmd == "define" and "define" in commands:
         define(hackChat, nick, msg)
     elif (cmd == "h" and not msg) or cmd == "help":
         help_(hackChat, nick)
@@ -125,6 +147,12 @@ def message(hackChat, nick, cmd, msg):
         urban(hackChat, nick, msg)
     elif cmd == "verify":
         verify(hackChat, nick, msg)
+
+
+def afk(hackChat, nick, msg):
+    """Handles AFK statuses sent from the callback function."""
+    hackChat.send("@{} is now AFK; reason: {}".format(nick, msg))
+    afkUsers[nick] = msg
 
 
 def answer(hackChat, nick, msg):
@@ -450,7 +478,7 @@ if not config["name"] or not config["channel"] or not config["trigger"]:
 charsPerLine = 88
 maxLines = 8
 maxChars = charsPerLine * maxLines
-commands = ["h", "help", "join", "joke", "katex", "msg", "poem", "poet",
+commands = ["afk", "h", "help", "join", "joke", "katex", "msg", "poem", "poet",
             "password", "search", "stats", "toss", "urban", "verify"]
 if config["github"]:
     commands.append("source")
@@ -460,4 +488,5 @@ if config["exchangeRateApiKey"]:
     commands.append("rate")
 oxford = dictionary.Oxford(config["oxfordAppId"], config["oxfordAppKey"])
 join(config["channel"])
+afkUsers = {}
 print("\nThe bot has started.")
