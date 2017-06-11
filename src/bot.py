@@ -42,8 +42,12 @@ def callback(hackChat, info):
     elif info["type"] == "online add":
         post(hackChat, info["nick"])
     elif info["type"] == "online remove":
+        with open("afk.json", "r") as f:
+            afkUsers = json.loads(f.read())
         if info["nick"] in afkUsers:
             afkUsers.pop(info["nick"])
+            with open("afk.json", "w") as f:
+                json.dump(afkUsers, f, indent = 4)
     elif info["type"] == "stats":
         stats(hackChat, info["IPs"], info["channels"])
     elif info["type"] == "warn":
@@ -52,14 +56,19 @@ def callback(hackChat, info):
 
 def check_afk(hackChat, nick, msg):
     """Checks AFK statuses sent from the callback function."""
-    if nick in afkUsers:
+    with open("afk.json", "r") as f:
+        afkUsers = json.loads(f.read())
+    cmd = "{}afk".format(config["trigger"])
+    if nick in afkUsers and not re.match(cmd, msg):
         hackChat.send("@{} is back; reason for AFK: ".format(nick)
                       + "{}".format(afkUsers[nick]))
         afkUsers.pop(nick)
+        with open("afk.json", "w") as f:
+            json.dump(afkUsers, f, indent = 4)
     reply = ""
     for user in afkUsers:
-        person = "@{}".format(user)
-        if person in msg:
+        person = "@{} ".format(user)
+        if person in "{} ".format(msg):
             reply += "{} is AFK; reason: {}\n".format(person, afkUsers[user])
     if reply:
         hackChat.send("@{}\n{}".format(nick, reply))
@@ -151,8 +160,12 @@ def message(hackChat, nick, cmd, msg):
 
 def afk(hackChat, nick, msg):
     """Handles AFK statuses sent from the callback function."""
-    hackChat.send("@{} is now AFK; reason: {}".format(nick, msg))
+    with open("afk.json", "r") as f:
+        afkUsers = json.loads(f.read())
     afkUsers[nick] = msg
+    with open("afk.json", "w") as f:
+        json.dump(afkUsers, f, indent = 4)
+    hackChat.send("@{} is now AFK; reason: {}".format(nick, msg))
 
 
 def answer(hackChat, nick, msg):
@@ -425,6 +438,8 @@ def verify(hackChat, nick, msg):
 
 
 random.seed(datetime.datetime.now())
+with open("afk.json", "w") as f:
+    json.dump({}, f, indent = 4)
 if not os.path.isfile("messages.json"):
     with open("messages.json", "w") as f:
         json.dump({}, f, indent = 4)
@@ -488,5 +503,4 @@ if config["exchangeRateApiKey"]:
     commands.append("rate")
 oxford = dictionary.Oxford(config["oxfordAppId"], config["oxfordAppKey"])
 join(config["channel"])
-afkUsers = {}
 print("\nThe bot has started.")
