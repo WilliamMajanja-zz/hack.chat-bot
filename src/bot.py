@@ -24,10 +24,11 @@ from commands import search
 
 
 class HackChatBot:
-    """Activates bot (to be used in tandem with the connection module).
+    """Activates the bot.
 
-    The <handle> function is the callback function.
-    The <join> function joins channels.
+    Functions:
+    handle: callback
+    join: joins channels
     """
 
     def __init__(self):
@@ -45,8 +46,6 @@ class HackChatBot:
         self._commands = ["afk", "h", "help", "join", "joke", "katex", "msg",
                           "poem", "poet", "password", "search", "stats",
                           "toss", "urban", "alias"]
-        if self._config["github"]:
-            self._commands.append("source")
         if self._config["oxfordAppId"] and self._config["oxfordAppKey"]:
             self._commands += ["define", "translate"]
         if self._config["exchangeRateApiKey"]:
@@ -57,7 +56,6 @@ class HackChatBot:
     def handle(self, hackChat, info):
         """Callback function for data sent from https://hack.chat.
 
-        This function is to be used with the "connection" module.
         <hackChat> (callback parameter) is the connection object.
         <info> (callback parameter) is the data sent.
         """
@@ -108,7 +106,7 @@ class HackChatBot:
         connector.join(channel)
 
     def _check_afk(self):
-        """Checks for AFK statuses."""
+        """Notifies AFK statuses."""
         with open("afk.json", "r") as f:
             afkUsers = json.loads(f.read())
         cmd = "{}afk".format(self._config["trigger"])
@@ -132,7 +130,7 @@ class HackChatBot:
             self._hackChat.send("@{} AFK:\n{}".format(self._nick, reply))
 
     def _log_trip_code(self):
-        """Logs <nick> and <trip>."""
+        """Logs nicknames along with their trip codes."""
         with open("trip_codes.json", "r") as f:
             verifiers = json.loads(f.read())
         if self._trip in verifiers and self._nick not in verifiers[self._trip]:
@@ -162,7 +160,7 @@ class HackChatBot:
                             + "{} channels.".format(self._channels))
 
     def _warn(self):
-        """Impure function to handle warnings."""
+        """Handles warnings."""
         print("\nWARNING at {}:\n{}".format(datetime.datetime.now(),
                                             self._warning))
 
@@ -173,7 +171,7 @@ class HackChatBot:
         elif self._cmd == "define" and "define" in self._commands:
             self._define()
         elif (self._cmd == "h" and not self._msg) or self._cmd == "help":
-            self._help_()
+            self._help()
         elif self._cmd == "join":
             self._joiner()
         elif self._cmd == "joke":
@@ -190,8 +188,6 @@ class HackChatBot:
             self._rate()
         elif self._cmd == "search":
             self._answer()
-        elif self._cmd == "source" and "source" in self._commands:
-            self._source()
         elif self._cmd == "stats":
             self._get_stats()
         elif self._cmd == "toss":
@@ -255,12 +251,15 @@ class HackChatBot:
             self._hackChat.send("@{} e.g., ".format(self._nick)
                                 + "{}define hello".format(config["trigger"]))
 
-    def _help_(self):
-        """Sends the bots' commands."""
+    def _help(self):
+        """Sends a message on how to use the bot."""
         joinWith = " {}".format(self._config["trigger"])
         reply = joinWith.join(sorted(self._commands))
+        reply = self._config["trigger"] + reply
+        if self._config["github"]:
+            reply += "\nsource code: {}".format(self._config["github"])
         self._hackChat.send(
-            "@{} {}{}".format(self._nick, self._config["trigger"], reply))
+            "@{} {}".format(self._nick, reply))
 
     def _joiner(self):
         """Joins a channel."""
@@ -382,11 +381,6 @@ class HackChatBot:
                 + "(e.g., {}rate:usd:inr ".format(self._config["trigger"])
                 + "gives 1 USD = 64 INR)")
 
-    def _source(self):
-        """Gives the link to the bots' code."""
-        self._hackChat.send(
-            "@{} {}".format(self._nick, self._config["github"]))
-
     def _strengthen(self):
         """Handles passwords."""
         if self._msg:
@@ -468,7 +462,7 @@ class HackChatBot:
                 + "{}urban covfefe)".format(self._config["trigger"]))
 
     def _alias(self):
-        """Verifies trip codes' holdees."""
+        """Sends the requested trip codes' holdees."""
         if self._msg:
             with open("trip_codes.json", "r") as f:
                 verifiers = json.loads(f.read())
