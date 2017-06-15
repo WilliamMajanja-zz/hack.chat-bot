@@ -24,7 +24,7 @@ from commands import search
 
 
 class HackChatBot:
-    """Performs the bots' actions on https://hack.chat.
+    """Activates bot (to be used in tandem with the connection module).
 
     The <handle> function is the callback function.
     The <join> function joins channels.
@@ -62,34 +62,43 @@ class HackChatBot:
         <info> (callback parameter) is the data sent.
         """
         self._hackChat = hackChat
-        if info["type"] == "invite":
-            self.join(info["channel"])
-        elif info["type"] == "message":
-            if info["nick"] != self._config["name"]:
-                self._check_afk(info["nick"], info["text"])
-            self._post(info["nick"])
-            if "trip" in info:
-                self._log_trip_code(info["nick"], info["trip"])
-            space = re.search(r"\s", info["text"].strip())
-            msg = info["text"][space.end():].strip() if space else None
-            call = info["text"][:len(self._config["trigger"])]
+        self._type = info["type"]
+        self._nick = info["nick"] if "nick" in info else None
+        self._text = info["text"].strip() if "text" in info else None
+        self._trip = info["trip"] if "trip" in info else None
+        self._channel = info["channel"] if "channel" in info else None
+        self._ip = info["ip"] if "ip" in info else None
+        self._warning = info["warning"] if "warning" in info else None
+        self._ips = info["IPs"] if "IPs" in info else None
+        self._channels = info["channels"] if "channels" in info else None
+        if self._type == "invite":
+            self.join(self._channel)
+        elif self._type == "message":
+            if self._nick != self._config["name"]:
+                self._check_afk()
+            self._post()
+            if self._trip:
+                self._log_trip_code()
+            space = re.search(r"\s", self._text.strip())
+            self._msg = self._text[space.end():].strip() if space else None
+            call = self._text[:len(self._config["trigger"])]
             if call == self._config["trigger"]:
-                check = space.start() if space else len(info["text"])
-                cmd = info["text"][len(self._config["trigger"]):check]
-                self._message(info["nick"], cmd, msg)
-        elif info["type"] == "online add":
-            self._post(info["nick"])
-        elif info["type"] == "online remove":
+                check = space.start() if space else len(self._text)
+                self._cmd = self._text[len(self._config["trigger"]):check]
+                self._message()
+        elif self._type == "online add":
+            self._post()
+        elif self._type == "online remove":
             with open("afk.json", "r") as f:
                 afkUsers = json.loads(f.read())
-            if info["nick"] in afkUsers:
-                afkUsers.pop(info["nick"])
+            if self._nick in afkUsers:
+                afkUsers.pop(self._nick)
                 with open("afk.json", "w") as f:
                     json.dump(afkUsers, f, indent = 4)
-        elif info["type"] == "stats":
-            self._stats(info["IPs"], info["channels"])
-        elif info["type"] == "warn":
-            self._warn(info["warning"])
+        elif self._type == "stats":
+            self._stats()
+        elif self._type == "warn":
+            self._warn()
 
     def join(self, channel):
         """Joins the channel <channel> (<str>)."""
@@ -98,111 +107,119 @@ class HackChatBot:
             self._config["url"])
         connector.join(channel)
 
-    def _check_afk(self, nick, msg):
+    def _check_afk(self):
         """Checks for AFK statuses."""
         with open("afk.json", "r") as f:
             afkUsers = json.loads(f.read())
         cmd = "{}afk".format(self._config["trigger"])
-        if nick in afkUsers and not re.match(cmd, msg):
-            self._hackChat.send("@{} is back: ".format(nick)
-                                + "{}".format(afkUsers[nick]))
-            afkUsers.pop(nick)
+        if self._nick in afkUsers and not re.match(cmd, self._text):
+            reply = "@{} is back".format(self._nick)
+            if afkUsers[self._nick]:
+                reply += ": {}".format(afkUsers[self._nick])
+            self._hackChat.send(reply)
+            afkUsers.pop(self._nick)
             with open("afk.json", "w") as f:
                 json.dump(afkUsers, f, indent = 4)
         reply = ""
         for user in afkUsers:
-            person = "@{} ".format(user)
-            if person in "{} ".format(msg):
-                reply += "{} is AFK: {}\n".format(person, afkUsers[user])
+            person = " @{} ".format(user)
+            if person in " {} ".format(self._text):
+                reply += "{} is AFK".format(person.strip())
+                if afkUsers[user]:
+                    reply += ": {}".format(afkUsers[user])
+                reply += "\n"
         if reply:
-            self._hackChat.send("@{} AFK:\n{}".format(nick, reply))
+            self._hackChat.send("@{} AFK:\n{}".format(self._nick, reply))
 
-    def _log_trip_code(self, nick, trip):
+    def _log_trip_code(self):
         """Logs <nick> and <trip>."""
         with open("trip_codes.json", "r") as f:
             verifiers = json.loads(f.read())
-        if trip in verifiers and nick not in verifiers[trip]:
-            verifiers[trip].append(nick)
-        elif trip not in verifiers:
-            verifiers[trip] = [nick]
+        if self._trip in verifiers and self._nick not in verifiers[self._trip]:
+            verifiers[self._trip].append(self._nick)
+        elif self._trip not in verifiers:
+            verifiers[self._trip] = [self._nick]
         with open("trip_codes.json", "w") as f:
             json.dump(verifiers, f, indent = 4)
 
-    def _post(self, nick):
-        """Sends messages saved for <nick>."""
+    def _post(self):
+        """Sends messages saved for people."""
         with open("messages.json", "r") as f:
             messages = json.loads(f.read())
-        if nick in messages:
+        if self._nick in messages:
             reply = ""
-            for msg in messages[nick]:
-                reply += ("@{} sent at ".format(msg["sender"])
-                          + "{}: {}\n".format(msg["datetime"], msg["message"]))
-            messages.pop(nick)
+            for msg in messages[self._nick]:
+                reply += "@{} sent: {}\n".format(msg["sender"], msg["message"])
+            messages.pop(self._nick)
             with open("messages.json", "w") as f:
                 json.dump(messages, f, indent = 4)
-            self._hackChat.send("@{} you have messages:\n".format(nick)
-                                + reply)
+            self._hackChat.send("@{} you have messages:\n".format(self._nick)
+                                + "{}".format(reply))
 
-    def _stats(self, ipCount, channels):
+    def _stats(self):
         """Sends statistics."""
-        self._hackChat.send("There are {} unique IPs in ".format(ipCount)
-                            + "{} channels.".format(channels))
+        self._hackChat.send("There are {} unique IPs in ".format(self._ips)
+                            + "{} channels.".format(self._channels))
 
-    def _warn(self, warning):
+    def _warn(self):
         """Impure function to handle warnings."""
-        print("\nWARNING at {}:\n{}".format(datetime.datetime.now(), warning))
+        print("\nWARNING at {}:\n{}".format(datetime.datetime.now(),
+                                            self._warning))
 
-    def _message(self, nick, cmd, msg):
+    def _message(self):
         """Redirects commands to their respective wrapper functions."""
-        if cmd == "afk":
-            self._afk(nick, msg)
-        elif cmd == "define" and "define" in self._commands:
-            self._define(nick, msg)
-        elif (cmd == "h" and not msg) or cmd == "help":
-            self._help_(nick)
-        elif cmd == "join":
-            self._joiner(nick, msg)
-        elif cmd == "joke":
-            self._joke(nick)
-        elif cmd[:len("katex")] == "katex":
-            self._katex_converter(nick, cmd, msg)
-        elif cmd[:len("msg")] == "msg":
-            self._messenger(nick, cmd, msg)
-        elif cmd == "password":
-            self._strengthen(nick, msg)
-        elif cmd == "poem" or cmd == "poet":
-            self._poem(nick, cmd, msg)
-        elif cmd[:len("rate")] == "rate" and "rate" in self._commands:
-            self._rate(nick, cmd)
-        elif cmd == "search":
-            self._answer(nick, msg)
-        elif cmd == "source" and "source" in self._commands:
-            self._source(nick)
-        elif cmd == "stats":
+        if self._cmd == "afk":
+            self._afk()
+        elif self._cmd == "define" and "define" in self._commands:
+            self._define()
+        elif (self._cmd == "h" and not self._msg) or self._cmd == "help":
+            self._help_()
+        elif self._cmd == "join":
+            self._joiner()
+        elif self._cmd == "joke":
+            self._joke()
+        elif self._cmd[:len("katex")] == "katex":
+            self._katex_converter()
+        elif self._cmd[:len("msg")] == "msg":
+            self._messenger()
+        elif self._cmd == "password":
+            self._strengthen()
+        elif self._cmd == "poem" or self._cmd == "poet":
+            self._poem()
+        elif self._cmd[:len("rate")] == "rate" and "rate" in self._commands:
+            self._rate()
+        elif self._cmd == "search":
+            self._answer()
+        elif self._cmd == "source" and "source" in self._commands:
+            self._source()
+        elif self._cmd == "stats":
             self._get_stats()
-        elif cmd == "toss":
-            self._toss(nick)
-        elif (cmd[:len("translate")] == "translate"
+        elif self._cmd == "toss":
+            self._toss()
+        elif (self._cmd[:len("translate")] == "translate"
               and "translate" in self._commands):
-            self._translate(nick, cmd, msg)
-        elif cmd == "urban":
-            self._urban(nick, msg)
-        elif cmd == "alias":
-            self._alias(nick, msg)
+            self._translate()
+        elif self._cmd == "urban":
+            self._urban()
+        elif self._cmd == "alias":
+            self._alias()
 
-    def _afk(self, nick, msg):
+    def _afk(self):
         """Handles AFK statuses."""
         with open("afk.json", "r") as f:
             afkUsers = json.loads(f.read())
-        afkUsers[nick] = msg
+        afkUsers[self._nick] = self._msg
         with open("afk.json", "w") as f:
             json.dump(afkUsers, f, indent = 4)
-        self._hackChat.send("@{} is now AFK: {}".format(nick, msg))
+        reply = "@{} is now AFK".format(self._nick)
+        if self._msg:
+            reply += ": {}".format(self._msg)
+        self._hackChat.send(reply)
 
-    def _answer(self, nick, msg):
+    def _answer(self):
         """Handles searches."""
-        if msg:
-            results = search.duckduckgo(msg, "hack.chat bot")
+        if self._msg:
+            results = search.duckduckgo(self._msg, "hack.chat bot")
             reply = ""
             if len(results["URL"]) > 0:
                 reply += "{} ".format(results["URL"])
@@ -214,52 +231,52 @@ class HackChatBot:
                 reply += results["AbstractText"]
             else:
                 reply = ""
-            tell = "@{} ".format(nick)
+            tell = "@{} ".format(self._nick)
             reply = utility.shorten(reply, self._maxChars - len(tell), ".")
             if not reply:
                 reply = "Sorry, I couldn't find anything."
             self._hackChat.send(tell + reply)
         else:
-            self._hackChat.send("@{} instant answers (e.g., ".format(nick)
-                                + "{}search ".format(config["trigger"])
+            self._hackChat.send("@{} instant answers ".format(self._nick)
+                                + "(e.g., {}search ".format(config["trigger"])
                                 + "pokemon ruby)")
 
-    def _define(self, nick, msg):
+    def _define(self):
         """Handles definitions."""
-        if msg:
-            data = self._oxford.define(msg)
+        if self._msg:
+            data = self._oxford.define(self._msg)
             if data["type"] == "success":
-                self._hackChat.send("@{} {}: ".format(nick, msg)
-                                    + data["response"])
+                self._hackChat.send("@{} {}: ".format(self._nick, self._msg)
+                                    + "{}".format(data["response"]))
             else:
-                self._hackChat.send("@{} Sorry, I couldn't find ".format(nick)
-                                    + "any definitions for that.")
+                self._hackChat.send("@{} Sorry, I couldn't ".format(self._nick)
+                                    + "find any definitions for that.")
         else:
-            self._hackChat.send("@{} e.g., ".format(nick)
+            self._hackChat.send("@{} e.g., ".format(self._nick)
                                 + "{}define hello".format(config["trigger"]))
 
-    def _help_(self, nick):
+    def _help_(self):
         """Sends the bots' commands."""
         joinWith = " {}".format(self._config["trigger"])
         reply = joinWith.join(sorted(self._commands))
-        self._hackChat.send("@{} {}".format(nick, self._config["trigger"])
-                            + reply)
+        self._hackChat.send(
+            "@{} {}{}".format(self._nick, self._config["trigger"], reply))
 
-    def _joiner(self, nick, msg):
+    def _joiner(self):
         """Joins a channel."""
-        if msg:
-            self._join(msg)
+        if self._msg:
+            self.join(self._msg)
         else:
             self._hackChat.send(
-                "@{} joins a hack.chat channel (e.g., ".format(nick)
+                "@{} joins a hack.chat channel (e.g., ".format(self._nick)
                 + "{}join ben)\nYou can also ".format(config["trigger"])
                 + "invite the bot via the sidebar.")
 
-    def _joke(self, nick):
+    def _joke(self):
         """Sends jokes."""
-        self._hackChat.send("@{} {}".format(nick, jokes.yo_momma()))
+        self._hackChat.send("@{} {}".format(self._nick, jokes.yo_momma()))
 
-    def _katex_converter(self, nick, cmd, msg):
+    def _katex_converter(self):
         """Handles KaTeX."""
         colors = ["red", "orange", "green", "blue", "pink", "purple", "gray",
                   "rainbow"]
@@ -267,21 +284,21 @@ class HackChatBot:
                  "large", "Large", "LARGE", "huge", "Huge"]
         fonts = ["mathrm", "mathit", "mathbf", "mathsf", "mathtt", "mathbb",
                  "mathcal", "mathfrak", "mathscr"]
-        if msg:
+        if self._msg:
             disallowed = ("#", "$", "%", "&", "_", "{", "}", "\\", "?")
-            if set(msg).isdisjoint(disallowed):
-                data = cmd.split(".")
+            if set(self._msg).isdisjoint(disallowed):
+                data = self._cmd.split(".")
                 stringify = lambda value: value if value else ""
                 size = stringify(utility.identical_item(data, sizes))
                 color = stringify(utility.identical_item(data, colors))
                 font = stringify(utility.identical_item(data, fonts))
-                txt = katex.generator(msg, size, color, font)
-                self._hackChat.send("@{} says {}".format(nick, txt))
+                txt = katex.generator(self._msg, size, color, font)
+                self._hackChat.send("@{} says {}".format(self._nick, txt))
             else:
                 self._hackChat.send("@{} KaTeX doesn't support \"{}\"".format(
-                    nick, "\", \"".join(disallowed)))
+                    self._nick, "\", \"".join(disallowed)))
         else:
-            reply = ("@{} stylizes text (e.g., ".format(nick)
+            reply = ("@{} stylizes text (e.g., ".format(self._nick)
                      + self._config["trigger"]
                      + "katex.rainbow.huge bye)\n")
             optional = lambda x: "\", \"".join(x)
@@ -290,16 +307,13 @@ class HackChatBot:
             reply += "OPTIONAL FONTS: \"{}\"\n".format(optional(fonts))
             self._hackChat.send(reply)
 
-    def _messenger(self, nick, cmd, msg):
+    def _messenger(self):
         """Sends saved messages to people when they're next active."""
-        info = cmd.split(":")
-        if len(info) == 2 and info[1] and msg:
-            dt = datetime.datetime.now()
-            dt = "{}:{} {}".format(dt.hour, dt.minute, dt.date())
+        info = self._cmd.split(":")
+        if len(info) == 2 and info[1] and self._msg:
             data = {
-                "sender": nick,
-                "datetime": dt,
-                "message": msg
+                "sender": self._nick,
+                "message": self._msg
             }
             with open("messages.json", "r") as f:
                 messages = json.loads(f.read())
@@ -309,19 +323,20 @@ class HackChatBot:
                 messages[info[1]] = [data]
             with open("messages.json", "w") as f:
                 json.dump(messages, f, indent = 4)
-            self._hackChat.send("@{} {} will get your ".format(nick, info[1])
-                                + "message the next time they message or "
-                                + "join a channel.")
+            self._hackChat.send("@{}, @{} will ".format(self._nick, info[1])
+                                + "get your message the next time they message "
+                                + "or join a channel.")
         else:
             self._hackChat.send(
-                "@{} sends a message to a user the next time ".format(nick)
-                + "they send a message or join a channel (e.g., "
+                "@{} sends a message to a user the next ".format(self._nick)
+                + "time they send a message or join a channel (e.g., "
                 + "{}msg:ben how are you?)".format(self._config["trigger"]))
 
-    def _poem(self, nick, cmd, msg):
+    def _poem(self):
         """Handles poetry."""
-        if msg:
-            data = poetry.poems(msg, True if cmd == "poet" else False)
+        if self._msg:
+            isPoet = True if self._cmd == "poet" else False
+            data = poetry.poems(self._msg, isPoet)
             if data:
                 data = data[random.randint(0, len(data) - 1)]
                 header = "{} by {}".format(data["title"], data["author"])
@@ -329,28 +344,28 @@ class HackChatBot:
                     header = "{}...".format(header[:97])
                 pasted = paste.dpaste(data["poem"], title = header)
                 linked = "Read the rest at {}".format(pasted["data"])
-                reply = ("@{} {}\nBy: ".format(nick, data["title"])
+                reply = ("@{} {}\nBy: ".format(self._nick, data["title"])
                          + "{}\n{}".format(data["author"], data["poem"]))
                 cut = utility.shorten_lines(reply, self._charsPerLine,
                                             self._maxLines - 1)
                 self._hackChat.send(cut + linked)
             else:
                 reply = "@{} Sorry, I couldn't find any poems for that."
-                self._hackChat.send(reply.format(nick))
+                self._hackChat.send(reply.format(self._nick))
         else:
-            if cmd == "poem":
+            if self._cmd == "poem":
                 self._hackChat.send(
-                    "@{} finds a poem by its name (e.g., ".format(nick)
+                    "@{} finds a poem by its name (e.g., ".format(self._nick)
                     + "{}poem sonnet)".format(self._config["trigger"]))
             else:
                 self._hackChat.send(
-                    "@{} finds a poem from a poet (e.g., ".format(nick)
+                    "@{} finds a poem from a poet (e.g., ".format(self._nick)
                     + "{}poet shakespeare)".format(self._config["trigger"]))
 
-    def _rate(self, nick, cmd):
+    def _rate(self):
         """Handles currency conversion."""
         converted = False
-        data = cmd.split(":") if ":" in cmd else None
+        data = self._cmd.split(":") if ":" in self._cmd else None
         if data and len(data) == 3:
             fromCode = data[1].upper()
             toCode = data[2].upper()
@@ -360,32 +375,33 @@ class HackChatBot:
                 if data["type"] == "success":
                     converted = True
                     self._hackChat.send("@{} 1 {} = {} {}".format(
-                        nick, fromCode, data["response"], toCode))
+                        self._nick, fromCode, data["response"], toCode))
         if not converted:
             self._hackChat.send(
-                "@{} Sorry, I couldn't convert that. (e.g., ".format(nick)
-                + "{}rate:usd:inr gives 1 USD ".format(self._config["trigger"])
-                + "= 64 INR)")
+                "@{} Sorry, I couldn't convert that. ".format(self._nick)
+                + "(e.g., {}rate:usd:inr ".format(self._config["trigger"])
+                + "gives 1 USD = 64 INR)")
 
-    def _source(self, nick):
+    def _source(self):
         """Gives the link to the bots' code."""
-        self._hackChat.send("@{} {}".format(nick, self._config["github"]))
+        self._hackChat.send(
+            "@{} {}".format(self._nick, self._config["github"]))
 
-    def _strengthen(self, nick, msg):
+    def _strengthen(self):
         """Handles passwords."""
-        if msg:
-            pwd = password.strengthen(msg)
-            self._hackChat.send("@{} {}".format(nick, pwd))
+        if self._msg:
+            pwd = password.strengthen(self._msg)
+            self._hackChat.send("@{} {}".format(self._nick, pwd))
         else:
             self._hackChat.send(
-                "@{} strengthens a password (e.g., ".format(nick)
+                "@{} strengthens a password (e.g., ".format(self._nick)
                 + "{}password gum)".format(self._config["trigger"]))
 
     def _get_stats(self):
         """Handles statistics."""
         self._hackChat.stats()
 
-    def _translate(self, nick, cmd, msg):
+    def _translate(self):
         """Handles translations."""
         languages = {"english": "en",
                      "spanish": "es",
@@ -396,74 +412,77 @@ class HackChatBot:
                      "indonesian": "id",
                      "tswana": "tn"}
         explain = True
-        if msg and len(re.findall(":", cmd)) == 2:
-            data = cmd.lower().split(":")
+        if self._msg and len(re.findall(":", self._cmd)) == 2:
+            data = self._cmd.lower().split(":")
             if data[1] in languages and data[2] in languages:
                 explain = False
                 srcLang = languages[data[1]]
                 targetLang = languages[data[2]]
-                words = msg.split()
+                words = self._msg.split()
                 translations = []
                 for word in words:
                     lastChar = word[len(word) - 1:]
                     symbol = r"[^a-zA-Z]"
                     lastChar = lastChar if re.search(symbol, word) else ""
                     word = re.sub(symbol, "", word)
-                    word = oxford.translate(word, targetLang, srcLang)
+                    word = self._oxford.translate(word, targetLang, srcLang)
                     if word["type"] == "failure":
                         translations = []
                         break
                     translations.append(word["response"] + lastChar)
                 if translations:
                     translated = " ".join(translations)
-                    self._hackChat.send("@{} {}".format(nick, translated))
+                    self._hackChat.send("@{} {}".format(self._nick,
+                                                        translated))
                 else:
-                    self._hackChat.send("@{} Sorry, I couldn't ".format(nick)
-                                        + "translate it all.")
+                    self._hackChat.send("@{} Sorry, I ".format(self._nick)
+                                        + "couldn't translate it all.")
         if explain:
             self._hackChat.send(
-                "@{} supported languages: ".format(nick)
+                "@{} supported languages: ".format(self._nick)
                 + "{}\ne.g., ".format(", ".join(languages.keys()))
                 + "{}".format(self._config["trigger"])
                 + "translate:english:spanish I have a holiday!\n")
 
-    def _toss(self, nick):
+    def _toss(self):
         """Handles coin tosses."""
         result = "heads" if random.randint(0, 1) else "tails"
-        self._hackChat.send("@{} {}".format(nick, result))
+        self._hackChat.send("@{} {}".format(self._nick, result))
 
-    def _urban(self, nick, msg):
+    def _urban(self):
         """Handles urban definitions."""
-        if msg:
-            data = dictionary.urban(msg)
+        if self._msg:
+            data = dictionary.urban(self._msg)
             if data:
                 reply = utility.shorten(data["definition"], self._maxChars,
                                         ".")
                 self._hackChat.send(
-                    "@{} {}: {} ".format(nick, data["word"], reply)
+                    "@{} {}: {} ".format(self._nick, data["word"], reply)
                     + data["permalink"])
             else:
-                self._hackChat.send("@{} Sorry, I couldn't find ".format(nick)
-                                    + "any definitions for that.")
+                self._hackChat.send("@{} Sorry, I couldn't ".format(self._nick)
+                                    + "find any definitions for that.")
         else:
             self._hackChat.send(
-                "@{} searches Urban Dictionary (e.g., ".format(nick)
+                "@{} searches Urban Dictionary (e.g., ".format(self._nick)
                 + "{}urban covfefe)".format(self._config["trigger"]))
 
-    def _alias(self, nick, msg):
+    def _alias(self):
         """Verifies trip codes' holdees."""
-        if msg:
+        if self._msg:
             with open("trip_codes.json", "r") as f:
                 verifiers = json.loads(f.read())
-            if msg in verifiers:
-                nicks = ", ".join(verifiers[msg])
+            if self._msg in verifiers:
+                nicks = ", ".join(verifiers[self._msg])
                 self._hackChat.send(
-                    "@{} {} has the aliases {}".format(nick, msg, nicks))
+                    "@{} {} has the aliases {}".format(self._nick, self._msg,
+                                                       nicks))
             else:
-                self._hackChat.send("@{} no aliases were found".format(nick))
+                self._hackChat.send(
+                    "@{} no aliases were found".format(self._nick))
         else:
             self._hackChat.send(
-                "@{} tells the trip codes' aliases (e.g., ".format(nick)
+                "@{} tells the trip codes' aliases (e.g., ".format(self._nick)
                 + "{}alias dIhdzE)".format(self._config["trigger"]))
 
 
