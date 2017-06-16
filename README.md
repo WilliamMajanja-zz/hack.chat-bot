@@ -39,6 +39,11 @@ If the bot is behaving inappropriately (e.g., spamming), warnings will be printe
 
 ![Commands](images/screenshot.png)
 
+# Contributing
+
+- [Code of Conduct](https://github.com/neelkamath/hack.chat-bot/blob/master/CODE_OF_CONDUCT.md)
+- [Contributing](https://github.com/neelkamath/hack.chat-bot/blob/master/CONTRIBUTING.md)
+
 # License
 
 This project is under the [MIT License](LICENSE.txt).
