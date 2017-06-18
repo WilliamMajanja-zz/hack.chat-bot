@@ -2,6 +2,7 @@
 
 """Contains miscellaneous functions for use in the bot."""
 
+import datetime
 import re
 
 
@@ -73,3 +74,11 @@ def identical_item(list1, list2):
         for part in list2:
             if item == part:
                 return item
+
+
+def str_to_datetime(string):
+    """Returns <string> (<str>) as a datetime object."""
+    strings = re.split(r"\D", string)
+    ints = [int(i) for i in strings]
+    return datetime.datetime(ints[0], ints[1], ints[2], ints[3], ints[4],
+                             ints[5], ints[6])

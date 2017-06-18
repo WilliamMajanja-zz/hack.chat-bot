@@ -9,7 +9,6 @@ import os.path
 import random
 import re
 import sys
-import threading
 
 import connection
 import utility
@@ -24,7 +23,7 @@ from commands import search
 
 
 class HackChatBot:
-    """Activates the bot.
+    """Activates the bot and prints warnings recieved to the console.
 
     Functions:
     handle: callback
@@ -34,7 +33,7 @@ class HackChatBot:
     def __init__(self):
         """Initializes values."""
         random.seed(datetime.datetime.now())
-        with open("config.json", "r") as f:
+        with open("data/config.json", "r") as f:
             self._config = json.loads(f.read())
         if (not self._config["name"] or not self._config["channel"]
             or not self._config["trigger"]):
@@ -87,11 +86,11 @@ class HackChatBot:
         elif self._type == "online add":
             self._post()
         elif self._type == "online remove":
-            with open("afk.json", "r") as f:
+            with open("data/afk.json", "r") as f:
                 afkUsers = json.loads(f.read())
             if self._nick in afkUsers:
                 afkUsers.pop(self._nick)
-                with open("afk.json", "w") as f:
+                with open("data/afk.json", "w") as f:
                     json.dump(afkUsers, f, indent = 4)
         elif self._type == "stats":
             self._stats()
@@ -107,7 +106,7 @@ class HackChatBot:
 
     def _check_afk(self):
         """Notifies AFK statuses."""
-        with open("afk.json", "r") as f:
+        with open("data/afk.json", "r") as f:
             afkUsers = json.loads(f.read())
         cmd = "{}afk".format(self._config["trigger"])
         if self._nick in afkUsers and not re.match(cmd, self._text):
@@ -116,7 +115,7 @@ class HackChatBot:
                 reply += ": {}".format(afkUsers[self._nick])
             self._hackChat.send(reply)
             afkUsers.pop(self._nick)
-            with open("afk.json", "w") as f:
+            with open("data/afk.json", "w") as f:
                 json.dump(afkUsers, f, indent = 4)
         reply = ""
         for user in afkUsers:
@@ -126,33 +125,40 @@ class HackChatBot:
                 if afkUsers[user]:
                     reply += ": {}".format(afkUsers[user])
                 reply += "\n"
-        if reply:
-            self._hackChat.send("@{} AFK:\n{}".format(self._nick, reply))
+        with open("data/last_afk_notify.json", "r") as f:
+            data = json.loads(f.read())
+        lastNotify = utility.str_to_datetime(data["notified"])
+        diff = (datetime.datetime.now() - lastNotify).seconds
+        if reply and diff >= 2:
+            self._hackChat.send("@{} AFK users:\n{}".format(self._nick, reply))
+            with open("data/last_afk_notify.json", "w") as f:
+                data = {"notified": str(datetime.datetime.now())}
+                json.dump(data, f, indent = 4)
 
     def _log_trip_code(self):
         """Logs nicknames along with their trip codes."""
-        with open("trip_codes.json", "r") as f:
+        with open("data/trip_codes.json", "r") as f:
             verifiers = json.loads(f.read())
         if self._trip in verifiers and self._nick not in verifiers[self._trip]:
             verifiers[self._trip].append(self._nick)
         elif self._trip not in verifiers:
             verifiers[self._trip] = [self._nick]
-        with open("trip_codes.json", "w") as f:
+        with open("data/trip_codes.json", "w") as f:
             json.dump(verifiers, f, indent = 4)
 
     def _post(self):
         """Sends messages saved for people."""
-        with open("messages.json", "r") as f:
+        with open("data/messages.json", "r") as f:
             messages = json.loads(f.read())
         if self._nick in messages:
             reply = ""
             for msg in messages[self._nick]:
-                reply += "@{} sent: {}\n".format(msg["sender"], msg["message"])
+                reply += "@{}: {}\n".format(msg["sender"], msg["message"])
             messages.pop(self._nick)
-            with open("messages.json", "w") as f:
+            with open("data/messages.json", "w") as f:
                 json.dump(messages, f, indent = 4)
-            self._hackChat.send("@{} you have messages:\n".format(self._nick)
-                                + "{}".format(reply))
+            self._hackChat.send(
+                "@{} you have messages:\n{}".format(self._nick, reply))
 
     def _stats(self):
         """Sends statistics."""
@@ -202,10 +208,10 @@ class HackChatBot:
 
     def _afk(self):
         """Handles AFK statuses."""
-        with open("afk.json", "r") as f:
+        with open("data/afk.json", "r") as f:
             afkUsers = json.loads(f.read())
         afkUsers[self._nick] = self._msg
-        with open("afk.json", "w") as f:
+        with open("data/afk.json", "w") as f:
             json.dump(afkUsers, f, indent = 4)
         reply = "@{} is now AFK".format(self._nick)
         if self._msg:
@@ -300,10 +306,9 @@ class HackChatBot:
             reply = ("@{} stylizes text (e.g., ".format(self._nick)
                      + self._config["trigger"]
                      + "katex.rainbow.huge bye)\n")
-            optional = lambda x: "\", \"".join(x)
-            reply += "OPTIONAL COLORS: \"{}\"\n".format(optional(colors))
-            reply += "OPTIONAL SIZES: \"{}\"\n".format(optional(sizes))
-            reply += "OPTIONAL FONTS: \"{}\"\n".format(optional(fonts))
+            reply += "OPTIONAL COLORS: {}\n".format(", ".join(colors))
+            reply += "OPTIONAL SIZES: {}\n".format(", ".join(sizes))
+            reply += "OPTIONAL FONTS: {}\n".format(", ".join(fonts))
             self._hackChat.send(reply)
 
     def _messenger(self):
@@ -314,17 +319,17 @@ class HackChatBot:
                 "sender": self._nick,
                 "message": self._msg
             }
-            with open("messages.json", "r") as f:
+            with open("data/messages.json", "r") as f:
                 messages = json.loads(f.read())
             if info[1] in messages:
                 messages[info[1]].append(data)
             else:
                 messages[info[1]] = [data]
-            with open("messages.json", "w") as f:
+            with open("data/messages.json", "w") as f:
                 json.dump(messages, f, indent = 4)
-            self._hackChat.send("@{}, @{} will ".format(self._nick, info[1])
-                                + "get your message the next time they message "
-                                + "or join a channel.")
+            self._hackChat.send(
+                "@{}, @{} will get your message ".format(self._nick, info[1])
+                + "the next time they message or join a channel.")
         else:
             self._hackChat.send(
                 "@{} sends a message to a user the next ".format(self._nick)
@@ -464,7 +469,7 @@ class HackChatBot:
     def _alias(self):
         """Sends the requested trip codes' holdees."""
         if self._msg:
-            with open("trip_codes.json", "r") as f:
+            with open("data/trip_codes.json", "r") as f:
                 verifiers = json.loads(f.read())
             if self._msg in verifiers:
                 nicks = ", ".join(verifiers[self._msg])
@@ -481,15 +486,19 @@ class HackChatBot:
 
 
 if __name__ == "__main__":
-    with open("afk.json", "w") as f:
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    with open("data/afk.json", "w") as f:
         json.dump({}, f, indent = 4)
-    if not os.path.isfile("messages.json"):
-        with open("messages.json", "w") as f:
+    with open("data/last_afk_notify.json", "w") as f:
+        json.dump({"notified": str(datetime.datetime.now())}, f, indent = 4)
+    if not os.path.isfile("data/messages.json"):
+        with open("data/messages.json", "w") as f:
             json.dump({}, f, indent = 4)
-    if not os.path.isfile("trip_codes.json"):
-        with open("trip_codes.json", "w") as f:
+    if not os.path.isfile("data/trip_codes.json"):
+        with open("data/trip_codes.json", "w") as f:
             json.dump({}, f, indent = 4)
-    if not os.path.isfile("config.json"):
+    if not os.path.isfile("data/config.json"):
         data = {}
         print("You can change your configuration later in the file "
               + "\"config.json\" located in the \"src\" folder. The features "
@@ -529,9 +538,9 @@ if __name__ == "__main__":
         data["github"] = input("\nEnter the link to the GitHub repository "
                                + "this is on (optional): ")
         print()
-        with open("config.json", "w") as f:
+        with open("data/config.json", "w") as f:
             json.dump(data, f, indent = 4)
-    with open("config.json", "r") as f:
+    with open("data/config.json", "r") as f:
         config = json.loads(f.read())
     bot = HackChatBot()
     bot.join(config["channel"])
