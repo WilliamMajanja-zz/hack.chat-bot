@@ -40,9 +40,10 @@ class HackChatBot:
         self._charsPerLine = 88
         self._maxLines = 8
         self._maxChars = self._charsPerLine * self._maxLines
-        self._commands = ["afk", "h", "help", "join", "joke", "katex", "msg",
-                          "poem", "poet", "password", "search", "stats",
-                          "toss", "urban", "alias"]
+        self._commands = [
+            "afk", "alias", "h", "help", "join", "joke", "katex", "msg",
+            "poem", "poet", "password", "search", "stats", "toss", "urban"
+        ]
         if self._config["oxfordAppId"] and self._config["oxfordAppKey"]:
             self._commands += ["define", "translate"]
         if self._config["exchangeRateApiKey"]:
@@ -96,11 +97,12 @@ class HackChatBot:
             self._warn()
 
     def join(self, channel):
-        """Joins the channel <channel> (<str>)."""
+        """Joins <channel> (<str>) and returns the connection object."""
         connector = connection.HackChat(
             self._handle, self._config["name"], self._config["password"],
             self._config["url"])
         connector.join(channel)
+        return connector
 
     def _check_afk(self):
         """Notifies AFK statuses."""
@@ -165,6 +167,8 @@ class HackChatBot:
         """Redirects commands to their respective wrapper functions."""
         if self._cmd == "afk":
             self._afk()
+        elif self._cmd == "alias":
+            self._alias()
         elif self._cmd == "define" and "define" in self._commands:
             self._define()
         elif (self._cmd == "h" and not self._msg) or self._cmd == "help":
@@ -194,8 +198,24 @@ class HackChatBot:
             self._translate()
         elif self._cmd == "urban":
             self._urban()
-        elif self._cmd == "alias":
-            self._alias()
+
+    def _alias(self):
+        """Sends the requested trip codes' holdees."""
+        if self._msg:
+            with open("data/trip_codes.json", "r") as f:
+                verifiers = json.loads(f.read())
+            if self._msg in verifiers:
+                nicks = ", ".join(verifiers[self._msg])
+                self._hackChat.send(
+                    "@{} {} has the aliases {}".format(self._nick, self._msg,
+                                                       nicks))
+            else:
+                self._hackChat.send(
+                    "@{} no aliases were found".format(self._nick))
+        else:
+            self._hackChat.send(
+                "@{} tells the trip codes' aliases (e.g., ".format(self._nick)
+                + "{}alias dIhdzE)".format(self._config["trigger"]))
 
     def _afk(self):
         """Handles AFK statuses."""
@@ -457,24 +477,6 @@ class HackChatBot:
             self._hackChat.send(
                 "@{} searches Urban Dictionary (e.g., ".format(self._nick)
                 + "{}urban covfefe)".format(self._config["trigger"]))
-
-    def _alias(self):
-        """Sends the requested trip codes' holdees."""
-        if self._msg:
-            with open("data/trip_codes.json", "r") as f:
-                verifiers = json.loads(f.read())
-            if self._msg in verifiers:
-                nicks = ", ".join(verifiers[self._msg])
-                self._hackChat.send(
-                    "@{} {} has the aliases {}".format(self._nick, self._msg,
-                                                       nicks))
-            else:
-                self._hackChat.send(
-                    "@{} no aliases were found".format(self._nick))
-        else:
-            self._hackChat.send(
-                "@{} tells the trip codes' aliases (e.g., ".format(self._nick)
-                + "{}alias dIhdzE)".format(self._config["trigger"]))
 
 
 if __name__ == "__main__":
