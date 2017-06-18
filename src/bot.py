@@ -444,14 +444,15 @@ class HackChatBot:
         if self._msg:
             data = dictionary.urban(self._msg)
             if data:
-                reply = utility.shorten(data["definition"], self._maxChars,
-                                        ".")
-                self._hackChat.send(
-                    "@{} {}: {} ".format(self._nick, data["word"], reply)
-                    + data["permalink"])
+                reply = "@{} {}: {} ".format(self._nick, data["word"],
+                                             data["definition"])
+                reply = utility.shorten_lines(reply, self._charsPerLine,
+                                              self._maxLines - 1)
+                self._hackChat.send(reply + data["permalink"])
             else:
-                self._hackChat.send("@{} Sorry, I couldn't ".format(self._nick)
-                                    + "find any definitions for that.")
+                self._hackChat.send(
+                    "@{} Sorry, I couldn't find any ".format(self._nick)
+                    + "definitions for that.")
         else:
             self._hackChat.send(
                 "@{} searches Urban Dictionary (e.g., ".format(self._nick)
