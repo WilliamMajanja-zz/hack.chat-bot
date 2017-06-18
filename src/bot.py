@@ -501,9 +501,9 @@ if __name__ == "__main__":
     if not os.path.isfile("data/config.json"):
         data = {}
         print("You can change your configuration later in the file "
-              + "\"config.json\" located in the \"src\" folder. The features "
-              + "whose API tokens you don't enter will remain inaccessible "
-              + "until you enter them.")
+              + "\"config.json\" located in the \"data\" folder in the \"src\""
+              + "folder. The features whose API tokens you don't enter will "
+              + "remain inaccessible until you enter them.")
         data["name"] = input("\nEnter the name of the bot (e.g., myBot) "
                              + "(mandatory): ")
         print("\nA trip code is a randomly generated code based on a "
