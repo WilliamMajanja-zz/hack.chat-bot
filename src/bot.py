@@ -25,9 +25,7 @@ from commands import search
 class HackChatBot:
     """Activates the bot and prints warnings recieved to the console.
 
-    Functions:
-    handle: callback
-    join: joins channels
+    Use the <join> function to join channels.
     """
 
     def __init__(self):
@@ -52,7 +50,7 @@ class HackChatBot:
         self._oxford = dictionary.Oxford(self._config["oxfordAppId"],
                                          self._config["oxfordAppKey"])
 
-    def handle(self, hackChat, info):
+    def _handle(self, hackChat, info):
         """Callback function for data sent from https://hack.chat.
 
         <hackChat> (callback parameter) is the connection object.
@@ -100,7 +98,7 @@ class HackChatBot:
     def join(self, channel):
         """Joins the channel <channel> (<str>)."""
         connector = connection.HackChat(
-            self.handle, self._config["name"], self._config["password"],
+            self._handle, self._config["name"], self._config["password"],
             self._config["url"])
         connector.join(channel)
 
@@ -121,19 +119,12 @@ class HackChatBot:
         for user in afkUsers:
             person = " @{} ".format(user)
             if person in " {} ".format(self._text):
-                reply += "{} is AFK".format(person.strip())
+                reply += person.strip()
                 if afkUsers[user]:
                     reply += ": {}".format(afkUsers[user])
                 reply += "\n"
-        with open("data/last_afk_notify.json", "r") as f:
-            data = json.loads(f.read())
-        lastNotify = utility.str_to_datetime(data["notified"])
-        diff = (datetime.datetime.now() - lastNotify).seconds
-        if reply and diff >= 2:
+        if reply:
             self._hackChat.send("@{} AFK users:\n{}".format(self._nick, reply))
-            with open("data/last_afk_notify.json", "w") as f:
-                data = {"notified": str(datetime.datetime.now())}
-                json.dump(data, f, indent = 4)
 
     def _log_trip_code(self):
         """Logs nicknames along with their trip codes."""
@@ -490,8 +481,6 @@ if __name__ == "__main__":
         os.makedirs("data")
     with open("data/afk.json", "w") as f:
         json.dump({}, f, indent = 4)
-    with open("data/last_afk_notify.json", "w") as f:
-        json.dump({"notified": str(datetime.datetime.now())}, f, indent = 4)
     if not os.path.isfile("data/messages.json"):
         with open("data/messages.json", "w") as f:
             json.dump({}, f, indent = 4)

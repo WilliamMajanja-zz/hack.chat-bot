@@ -11,7 +11,7 @@ this channel if they go to that URL.
 
 # Using the bot
 
-If the bot, `neelkamath_bot`, is online, you can check it out by entering `.help` on the
+If the bot, `neelkamath_bot`, is online, you can check it out by entering `'help` on the
 [?programming](https://hack.chat/?programming) channel of the site.
 
 # Local install for developers
