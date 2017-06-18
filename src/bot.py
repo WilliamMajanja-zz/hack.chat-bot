@@ -76,7 +76,7 @@ class HackChatBot:
             self._post()
             if self._trip:
                 self._log_trip_code()
-            space = re.search(r"\s", self._text.strip())
+            space = re.search(r"\s", self._text)
             self._msg = self._text[space.end():].strip() if space else None
             call = self._text[:len(self._config["trigger"])]
             if call == self._config["trigger"]:
