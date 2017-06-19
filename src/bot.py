@@ -12,6 +12,7 @@ import sys
 
 import connection
 import utility
+from commands import arithmetic
 from commands import currency
 from commands import jokes
 from commands import dictionary
@@ -42,7 +43,8 @@ class HackChatBot:
         self._maxChars = self._charsPerLine * self._maxLines
         self._commands = [
             "afk", "alias", "h", "help", "join", "joke", "katex", "msg",
-            "poem", "poet", "password", "search", "stats", "toss", "urban"
+            "poem", "poet", "password", "search", "stats", "toss", "urban",
+            "math"
         ]
         if self._config["oxfordAppId"] and self._config["oxfordAppKey"]:
             self._commands += ["define", "translate"]
@@ -179,6 +181,8 @@ class HackChatBot:
             self._joke()
         elif self._cmd[:len("katex")] == "katex":
             self._katex_converter()
+        elif self._cmd == "math":
+            self._math()
         elif self._cmd[:len("msg")] == "msg":
             self._messenger()
         elif self._cmd == "password":
@@ -321,6 +325,23 @@ class HackChatBot:
             reply += "OPTIONAL SIZES: {}\n".format(", ".join(sizes))
             reply += "OPTIONAL FONTS: {}\n".format(", ".join(fonts))
             self._hackChat.send(reply)
+
+    def _math(self):
+        """Solves arithmetic problems."""
+        if self._msg:
+            answer = arithmetic.evaluate(self._msg)
+            if answer:
+                self._hackChat.send("@{} {}".format(self._nick, answer))
+            else:
+                self._hackChat.send(
+                    "@{} Sorry, I couldn't solve that.".format(self._nick))
+        else:
+            self._hackChat.send(
+                "@{} solves math problems (e.g., (-2) ** 4)".format(self._nick)
+                + "\nHow to use:\n\"+\": addition, \"-\": subtraction, \"*\": "
+                + "multiplication, \"/\": division, \"//\": floor division, "
+                + "\"**\": exponentiation, \"%\": remainder, \"(\" and \")\": "
+                + "state order of operations")
 
     def _messenger(self):
         """Sends saved messages to people when they're next active."""
