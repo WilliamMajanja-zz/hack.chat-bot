@@ -3,6 +3,7 @@
 """Contains miscellaneous functions for use in the bot."""
 
 import datetime
+import re
 
 
 def shorten(string, maxLen, last):
