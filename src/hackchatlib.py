@@ -63,7 +63,9 @@ class HackChat:
     "Your IP is being rate-limited or blocked."
 
     Example:
-        import connection
+        #!/usr/bin/env python3
+
+        import hackchatlib
 
 
         # Make a callback function with two parameters.
@@ -78,7 +80,7 @@ class HackChat:
 
 
         if __name__ == "__main__":
-            hackChat = connection.HackChat(on_message, "myBot")
+            hackChat = hackchatlib.HackChat(on_message, "myBot")
             hackChat.join("botDev")
     """
 
@@ -112,8 +114,8 @@ class HackChat:
                        + "moment and try again."
         }
         """
-        nick = "{}#{}".format(self.nick, self.pwd)
         self.channel = channel
+        nick = "{}#{}".format(self.nick, self.pwd)
         data = {"cmd": "join", "channel": self.channel, "nick": nick}
         self._send_packet(data)
 

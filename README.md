@@ -41,8 +41,8 @@ If the bot is behaving inappropriately (e.g., spamming), warnings will be printe
 
 # Contributing
 
-- [Code of Conduct](https://github.com/neelkamath/hack.chat-bot/blob/master/CODE_OF_CONDUCT.md)
-- [Contributing](https://github.com/neelkamath/hack.chat-bot/blob/master/CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contributing](CONTRIBUTING.md)
 
 # License
 
