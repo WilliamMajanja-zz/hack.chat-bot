@@ -559,8 +559,9 @@ if __name__ == "__main__":
                                            + "API key (optional): ")
         data["github"] = input("\nEnter the link to the GitHub repository "
                                + "this is on (optional): ")
-        channels = input("\nEnter a space-separated list of the channels the "
-                         + "bot cannot leave (e.g., botDev programming): ")
+        channels = input(
+            "\nEnter a space-separated list of the channels the bot cannot "
+            + "leave (e.g., botDev programming) (optional): ")
         data["doNotLeave"] = channels.split()
         print()
         with open("data/config.json", "w") as f:

@@ -2,6 +2,7 @@
 
 import json
 import re
+import ssl
 import time
 import threading
 import websocket
@@ -97,7 +98,8 @@ class HackChat:
         self.nick = nick
         self.pwd = pwd
         self.url = url
-        self._ws = websocket.create_connection(self.url)
+        self._ws = websocket.create_connection(
+            self.url, sslopt = {"cert_reqs": ssl.CERT_NONE})
         self.onlineUsers = []
         self._run_thread = True
         threading.Thread(target = self._ping).start()
