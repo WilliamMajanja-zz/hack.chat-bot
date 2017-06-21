@@ -10,11 +10,15 @@ import websocket
 class HackChat:
     """This class receives and sends data from and to https://hack.chat.
 
-    Usage:
-    The <onlineUsers> attribute is a <list> of the users currently
-    online in the channel.
+    Attributes:
+    onlineUsers -- <list>; users currently online in the channel
+    nick -- <str>; the nickname being used
+    pwd -- <str>; the password being used
+    url -- <str>; the hack.chat instance connected to
+
+    Return values:
     Data received by the callback function without explicit access of
-    functions in this class will have one of the following formats.
+    functions in this class will be one of the following (<dict>):
     {
         "type": "message",
         "nick": <str>; the senders' nickname,
@@ -51,12 +55,12 @@ class HackChat:
         "type": "warn",
         "warning": <str>; an explanation of why you have been warned
     }
-    The following warnings may be given:
-    <"Nickname must consist of up to 24 letters, numbers, and "
-     + "underscores">
-    <"Cannot impersonate the admin">
-    <"Nickname taken">
-    <"Your IP is being rate-limited or blocked.">
+    The following warnings may be given  (<str>):
+    "Nickname must consist of up to 24 letters, numbers, and "
+    + "underscores"
+    "Cannot impersonate the admin"
+    "Nickname taken"
+    "Your IP is being rate-limited or blocked."
 
     Example:
         import connection
@@ -87,12 +91,13 @@ class HackChat:
         pwd -- <str>; password that generates a tripcode upon entering
         url -- <str>; the hack.chat instance
         """
-        self.callback = callback
+        self._callback = callback
         self.nick = nick
         self.pwd = pwd
         self.url = url
+        self._ws = websocket.create_connection(self.url)
         self.onlineUsers = []
-        self._ws = websocket.create_connection(url)
+        self._run_thread = True
         threading.Thread(target = self._ping).start()
         threading.Thread(target = self._run).start()
 
@@ -108,7 +113,9 @@ class HackChat:
         }
         """
         nick = "{}#{}".format(self.nick, self.pwd)
-        self._send_packet({"cmd": "join", "channel": channel, "nick": nick})
+        self.channel = channel
+        data = {"cmd": "join", "channel": self.channel, "nick": nick}
+        self._send_packet(data)
 
     def _send_packet(self, data):
         """Sends <data> (<dict>) to https://hack.chat."""
@@ -118,27 +125,28 @@ class HackChat:
         """Periodically pings to retain the websocket connection."""
         while True:
             time.sleep(60)
-            self._send_packet({"cmd": "ping"})
+            if self._run_thread:
+                self._send_packet({"cmd": "ping"})
 
     def _run(self):
         """Sends and receives data to the callback function."""
-        while True:
+        while self._run_thread:
             result = json.loads(self._ws.recv())
             if result["cmd"] == "chat":
                 data = {"type": "message", "nick": result["nick"],
                         "text": result["text"]}
                 if "trip" in result:
                     data["trip"] = result["trip"]
-                self.callback(self, data)
+                self._callback(self, data)
             elif result["cmd"] == "onlineSet":
                 self.onlineUsers += result["nicks"]
             elif result["cmd"] == "onlineAdd":
                 self.onlineUsers.append(result["nick"])
-                self.callback(self, {"type": "online add",
+                self._callback(self, {"type": "online add",
                                      "nick": result["nick"]})
             elif result["cmd"] == "onlineRemove":
                 self.onlineUsers.remove(result["nick"])
-                self.callback(self, {"type": "online remove",
+                self._callback(self, {"type": "online remove",
                                      "nick": result["nick"]})
             elif result["cmd"] == "info" and " invited " in result["text"]:
                 if "You invited " in result["text"]:
@@ -148,31 +156,31 @@ class HackChat:
                     name = result["text"][:space.start()]
                 link = re.search("\?", result["text"])
                 channel = result["text"][link.end():]
-                self.callback(self, {"type": "invite", "nick": name,
+                self._callback(self, {"type": "invite", "nick": name,
                                      "channel": channel})
             elif result["cmd"] == "info" and " IPs " in result["text"]:
                 data = result["text"].split()
-                self.callback(self, {"type": "stats", "IPs": data[0],
+                self._callback(self, {"type": "stats", "IPs": data[0],
                                      "channels": data[4]})
             elif result["cmd"] == "info" and "Banned " in result["text"]:
                 nick = result["text"][len("Banned "):]
-                self.callback(self, {"type": "banned", "nick": nick})
+                self._callback(self, {"type": "banned", "nick": nick})
             elif result["cmd"] == "info" and "Unbanned " in result["text"]:
                 ip = result["text"][len("Unbanned "):]
-                self.callback(self, {"type": "unbanned", "ip": ip})
+                self._callback(self, {"type": "unbanned", "ip": ip})
             elif (result["cmd"] == "info"
                   and "Server broadcast: " in result["text"]):
                 txt = result["text"][len("Server broadcast: "):]
-                self.callback(self, {"type": "broadcast", "text": txt})
+                self._callback(self, {"type": "broadcast", "text": txt})
             elif result["cmd"] == "info":
-                self.callback(self, {"type": "list users",
+                self._callback(self, {"type": "list users",
                                      "text": result["text"]})
             elif result["cmd"] == "warn":
                 data = {"type": "warn", "warning": result["text"]}
                 if "Could not find " in result["text"]:
                     data["warning"] = "user to ban not found"
                     data["nick"] = result["text"][len("Could not find "):]
-                self.callback(self, data)
+                self._callback(self, data)
 
     def send(self, msg):
         """Send <msg> (<str>) to the channel that last sent data.
@@ -273,3 +281,8 @@ class HackChat:
         }
         """
         self._send_packet({"cmd": "broadcast", "text": text})
+
+    def leave(self):
+        """Leaves the channel currently connected to."""
+        self._run_thread = False
+        self._ws.close()

@@ -42,9 +42,9 @@ class HackChatBot:
         self._maxLines = 8
         self._maxChars = self._charsPerLine * self._maxLines
         self._commands = [
-            "afk", "alias", "h", "help", "join", "joke", "katex", "msg",
-            "poem", "poet", "password", "search", "stats", "toss", "urban",
-            "math"
+            "afk", "alias", "h", "help", "join", "joke", "katex", "leave",
+            "math", "msg", "poem", "poet", "password", "search", "stats",
+            "toss", "urban"
         ]
         if self._config["oxfordAppId"] and self._config["oxfordAppKey"]:
             self._commands += ["define", "translate"]
@@ -181,6 +181,8 @@ class HackChatBot:
             self._joke()
         elif self._cmd[:len("katex")] == "katex":
             self._katex_converter()
+        elif self._cmd == "leave":
+            self._leave()
         elif self._cmd == "math":
             self._math()
         elif self._cmd[:len("msg")] == "msg":
@@ -325,6 +327,13 @@ class HackChatBot:
             reply += "OPTIONAL SIZES: {}\n".format(", ".join(sizes))
             reply += "OPTIONAL FONTS: {}\n".format(", ".join(fonts))
             self._hackChat.send(reply)
+
+    def _leave(self):
+        """Leaves the channel currently connected to if allowed."""
+        if self._hackChat.channel in self._config["doNotLeave"]:
+            self._hackChat.send("I cannot leave this channel.")
+        else:
+            self._hackChat.leave()
 
     def _math(self):
         """Solves arithmetic problems."""
@@ -514,9 +523,9 @@ if __name__ == "__main__":
     if not os.path.isfile("data/config.json"):
         data = {}
         print("You can change your configuration later in the file "
-              + "\"config.json\" located in the \"data\" folder in the \"src\""
-              + "folder. The features whose API tokens you don't enter will "
-              + "remain inaccessible until you enter them.")
+              + "\"config.json\" located in the \"data\" folder in the "
+              + "\"src\" folder. The features whose API tokens you don't "
+              + "enter will remain inaccessible until you enter them.")
         data["name"] = input("\nEnter the name of the bot (e.g., myBot) "
                              + "(mandatory): ")
         print("\nA trip code is a randomly generated code based on a "
@@ -531,9 +540,9 @@ if __name__ == "__main__":
         print("\nChannels are chats on https://hack.chat. If the channel for "
               + "the name you enter doesn't exist, one will automatically be "
               + "created. To join the \"math\" channel "
-              + "(https://hack.chat/?math), enter \"math\".)")
+              + "(i.e., https://hack.chat/?math), enter \"math\".)")
         data["channel"] = input("Enter which channel you would like to "
-                                + "connect to (mandatory): ")
+                                + "connect to (e.g., math) (mandatory): ")
         print("\nFor the bot to know when it's being called, you must state a "
               + "trigger.")
         data["trigger"] = input("Enter the trigger (e.g., \".\" will trigger "
@@ -550,6 +559,9 @@ if __name__ == "__main__":
                                            + "API key (optional): ")
         data["github"] = input("\nEnter the link to the GitHub repository "
                                + "this is on (optional): ")
+        channels = input("\nEnter a space-separated list of the channels the "
+                         + "bot cannot leave (e.g., botDev programming): ")
+        data["doNotLeave"] = channels.split()
         print()
         with open("data/config.json", "w") as f:
             json.dump(data, f, indent = 4)
