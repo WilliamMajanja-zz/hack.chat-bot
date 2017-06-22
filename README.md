@@ -35,7 +35,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `'help
     - Windows: `python bot.py`
     - Other: `python3 bot.py`
 
-If the bot is behaving inappropriately (e.g., spamming), warnings will be printed to the console.
+Important information on the bots' activities will be printed to the console.
 
 ![Commands](images/screenshot.png)
 

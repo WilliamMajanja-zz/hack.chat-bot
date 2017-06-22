@@ -9,6 +9,8 @@ import os.path
 import random
 import re
 import sys
+import threading
+import time
 
 import hackchatlib
 import utility
@@ -34,7 +36,7 @@ class HackChatBot:
         random.seed(datetime.datetime.now())
         with open("data/config.json", "r") as f:
             self._config = json.loads(f.read())
-        if (not self._config["name"] or not self._config["channel"]
+        if (not self._config["name"] or not self._config["channels"]
             or not self._config["trigger"]):
             sys.exit("Make sure you have entered \"name\", \"channel\" and "
                      + "\"trigger\" in config.json located in the src folder.")
@@ -99,12 +101,11 @@ class HackChatBot:
             self._warn()
 
     def join(self, channel):
-        """Joins <channel> (<str>) and returns the connection object."""
+        """Joins <channel> (<str>)."""
         connector = hackchatlib.HackChat(
             self._handle, self._config["name"], self._config["password"],
             self._config["url"])
         connector.join(channel)
-        return connector
 
     def _check_afk(self):
         """Notifies AFK statuses."""
@@ -162,8 +163,8 @@ class HackChatBot:
 
     def _warn(self):
         """Handles warnings."""
-        print("\nWARNING at {}:\n{}".format(datetime.datetime.now(),
-                                            self._warning))
+        msg = utility.date_format("warning", self._warning)
+        print("\n{}".format(msg))
 
     def _message(self):
         """Redirects commands to their respective wrapper functions."""
@@ -541,8 +542,11 @@ if __name__ == "__main__":
               + "the name you enter doesn't exist, one will automatically be "
               + "created. To join the \"math\" channel "
               + "(i.e., https://hack.chat/?math), enter \"math\".)")
-        data["channel"] = input("Enter which channel you would like to "
-                                + "connect to (e.g., math) (mandatory): ")
+        channels = input(
+            "Enter a space-separated list of the channels the bot should  "
+            + "connect to on start-up (e.g., botDev programming) "
+            + "(mandatory): ")
+        data["channels"] = channels.split()
         print("\nFor the bot to know when it's being called, you must state a "
               + "trigger.")
         data["trigger"] = input("Enter the trigger (e.g., \".\" will trigger "
@@ -569,5 +573,13 @@ if __name__ == "__main__":
     with open("data/config.json", "r") as f:
         config = json.loads(f.read())
     bot = HackChatBot()
-    bot.join(config["channel"])
-    print("\nThe bot has started.")
+    _ = ("The bot will wait 30 seconds before joining each new channel to "
+         + "prevent getting ratelimited.")
+    msg = utility.date_format("info", _)
+    print("\n{}".format(msg))
+    for channel in config["channels"]:
+        threading.Thread(target = bot.join(channel)).start()
+        _ = "The bot joined the channel: {}".format(channel)
+        msg = utility.date_format("info", _)
+        print("\n{}".format(msg))
+        time.sleep(30)

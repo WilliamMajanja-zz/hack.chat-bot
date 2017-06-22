@@ -6,6 +6,23 @@ import datetime
 import re
 
 
+def date_format(title, body):
+    """Returns a <str> with the current date and time.
+
+    Keyword arguments:
+    title -- <str>; the messages' title
+    body -- <str>; the messages' contents
+
+    Example:
+        print(date_format("warning", "You can't use that."))
+        # This will print:
+        #
+        # WARNING at 2017-06-22 16:56:19.554982:
+        # You can't use that.
+    """
+    return "{} at {}:\n{}".format(title.upper(), datetime.datetime.now(), body)
+
+
 def shorten(string, maxLen, last):
     """Returns <string> with custom truncation.
 
