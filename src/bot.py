@@ -35,8 +35,7 @@ class HackChatBot:
     def __init__(self):
         """Initializes values."""
         random.seed(datetime.datetime.now())
-        with open("data/config.json", "r") as f:
-            self._config = json.loads(f.read())
+        self._config = json.loads(open("data/config.json").read())
         if (not self._config["name"] or not self._config["channels"]
             or not self._config["trigger"]):
             sys.exit("Make sure you have entered \"name\", \"channel\" and "
@@ -90,8 +89,7 @@ class HackChatBot:
         elif self._type == "online add":
             self._post()
         elif self._type == "online remove":
-            with open("data/afk.json", "r") as f:
-                afkUsers = json.loads(f.read())
+            afkUsers = json.loads(open("data/afk.json").read())
             if self._nick in afkUsers:
                 afkUsers.pop(self._nick)
                 with open("data/afk.json", "w") as f:
@@ -110,32 +108,29 @@ class HackChatBot:
 
     def _check_afk(self):
         """Notifies AFK statuses."""
-        with open("data/afk.json", "r") as f:
-            afkUsers = json.loads(f.read())
+        afkUsers = json.loads(open("data/afk.json").read())
+        if not self._hackChat.channel in afkUsers:
+            return
+        afkUsersChannel = afkUsers[self._hackChat.channel]
         cmd = "{}afk".format(self._config["trigger"])
-        if self._nick in afkUsers and not re.match(cmd, self._text):
-            reply = "@{} is back".format(self._nick)
-            if afkUsers[self._nick]:
-                reply += ": {}".format(afkUsers[self._nick])
-            self._hackChat.send(reply)
-            afkUsers.pop(self._nick)
+        if self._nick in afkUsersChannel and not re.match(cmd, self._text):
+            afkUsersChannel.pop(self._nick)
             with open("data/afk.json", "w") as f:
                 json.dump(afkUsers, f, indent = 4)
         reply = ""
-        for user in afkUsers:
+        for user in afkUsersChannel:
             person = " @{} ".format(user)
             if person in " {} ".format(self._text):
                 reply += person.strip()
-                if afkUsers[user]:
-                    reply += ": {}".format(afkUsers[user])
+                if afkUsersChannel[user]:
+                    reply += ": {}".format(afkUsersChannel[user])
                 reply += "\n"
         if reply:
             self._hackChat.send("@{} AFK users:\n{}".format(self._nick, reply))
 
     def _log_trip_code(self):
         """Logs nicknames along with their trip codes."""
-        with open("data/trip_codes.json", "r") as f:
-            verifiers = json.loads(f.read())
+        verifiers = json.loads(open("data/trip_codes.json").read())
         if self._trip in verifiers and self._nick not in verifiers[self._trip]:
             verifiers[self._trip].append(self._nick)
         elif self._trip not in verifiers:
@@ -145,8 +140,7 @@ class HackChatBot:
 
     def _post(self):
         """Sends messages saved for people."""
-        with open("data/messages.json", "r") as f:
-            messages = json.loads(f.read())
+        messages = json.loads(open("data/messages.json").read())
         if self._nick in messages:
             reply = ""
             for msg in messages[self._nick]:
@@ -210,13 +204,13 @@ class HackChatBot:
     def _alias(self):
         """Sends the requested trip codes' holdees."""
         if self._msg:
-            with open("data/trip_codes.json", "r") as f:
-                verifiers = json.loads(f.read())
+            verifiers = json.loads(open("data/trip_codes.json").read())
             if self._msg in verifiers:
                 nicks = ", ".join(verifiers[self._msg])
-                self._hackChat.send(
-                    "@{} {} has the aliases {}".format(self._nick, self._msg,
-                                                       nicks))
+                reply = ("@{} {} has the ".format(self._nick, self._msg)
+                         + "aliases {}".format(nicks))
+                nicks = utility.shorten(reply, self._maxChars, " ")
+                self._hackChat.send(reply)
             else:
                 self._hackChat.send(
                     "@{} no aliases were found".format(self._nick))
@@ -227,9 +221,10 @@ class HackChatBot:
 
     def _afk(self):
         """Handles AFK statuses."""
-        with open("data/afk.json", "r") as f:
-            afkUsers = json.loads(f.read())
-        afkUsers[self._nick] = self._msg
+        afkUsers = json.loads(open("data/afk.json").read())
+        if self._hackChat.channel not in afkUsers:
+            afkUsers[self._hackChat.channel] = {}
+        afkUsers[self._hackChat.channel][self._nick] = self._msg
         with open("data/afk.json", "w") as f:
             json.dump(afkUsers, f, indent = 4)
         reply = "@{} is now AFK".format(self._nick)
@@ -362,8 +357,7 @@ class HackChatBot:
                 "sender": self._nick,
                 "message": self._msg
             }
-            with open("data/messages.json", "r") as f:
-                messages = json.loads(f.read())
+            messages = json.loads(open("data/messages.json").read())
             if info[1] in messages:
                 messages[info[1]].append(data)
             else:
@@ -571,8 +565,7 @@ if __name__ == "__main__":
         print()
         with open("data/config.json", "w") as f:
             json.dump(data, f, indent = 4)
-    with open("data/config.json", "r") as f:
-        config = json.loads(f.read())
+    config = json.loads(open("data/config.json").read())
     bot = HackChatBot()
     _ = ("The bot will wait 30 seconds before joining each new channel to "
          + "prevent getting ratelimited.")
