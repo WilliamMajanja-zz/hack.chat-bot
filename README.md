@@ -31,7 +31,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `'help
 # Usage
 
 1. Change the directory: `cd src`
-1. Run the script.
+1. Run the script:
     - Windows: `python bot.py`
     - Other: `python3 bot.py`
 

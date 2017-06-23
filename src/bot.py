@@ -12,7 +12,8 @@ import sys
 import threading
 import time
 
-import hackchatlib
+import libhackchat
+
 import utility
 from commands import arithmetic
 from commands import currency
@@ -102,7 +103,7 @@ class HackChatBot:
 
     def join(self, channel):
         """Joins <channel> (<str>)."""
-        connector = hackchatlib.HackChat(
+        connector = libhackchat.HackChat(
             self._handle, self._config["name"], self._config["password"],
             self._config["url"])
         connector.join(channel)
