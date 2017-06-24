@@ -19,7 +19,7 @@ If the bot, `neelkamath_bot`, is online, you can check it out by entering `'help
 ## Prerequisites
 
 - [Python 3 or higher](https://www.python.org/downloads/)
-- [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/documentation/getting_started) (optional)
+- [Oxford Dictionaries API tokens](https://developer.oxforddictionaries.com/admin/applications/1409614775539) (optional)
 - [Currency Converter API tokens](https://www.exchangerate-api.com/) (optional)
 
 ## Building
