@@ -102,9 +102,8 @@ class HackChatBot:
     def join(self, channel):
         """Joins <channel> (<str>)."""
         connector = libhackchat.HackChat(
-            self._handle, self._config["name"], self._config["password"],
-            self._config["url"])
-        connector.join(channel)
+            self._handle, self._config["name"], channel,
+            self._config["password"], self._config["url"])
 
     def _check_afk(self):
         """Notifies AFK statuses."""
