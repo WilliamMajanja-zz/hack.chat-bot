@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+import cucco
 import libhackchat
 
 import utility
@@ -304,7 +305,10 @@ class HackChatBot:
                  "mathcal", "mathfrak", "mathscr"]
         if self._msg:
             disallowed = ("#", "$", "%", "&", "_", "{", "}", "\\", "?")
-            if set(self._msg).isdisjoint(disallowed):
+            cuccoObj = cucco.Cucco()
+            newTxt = cuccoObj.replace_emojis(self._msg)
+            isEmoji = False if newTxt == self._msg else True
+            if set(self._msg).isdisjoint(disallowed) and not isEmoji:
                 data = self._cmd.split(".")
                 stringify = lambda value: value if value else ""
                 size = stringify(utility.identical_item(data, sizes))
@@ -313,8 +317,10 @@ class HackChatBot:
                 txt = katex.generator(self._msg, size, color, font)
                 self._hackChat.send("@{} says {}".format(self._nick, txt))
             else:
-                self._hackChat.send("@{} KaTeX doesn't support \"{}\"".format(
-                    self._nick, "\", \"".join(disallowed)))
+                invalid = "\"{}\"".format("\", \"".join(disallowed))
+                self._hackChat.send(
+                    "@{} KaTeX doesn't support ".format(self._nick)
+                    + "emoji, {}".format(invalid))
         else:
             reply = ("@{} stylizes text (e.g., ".format(self._nick)
                      + self._config["trigger"]
