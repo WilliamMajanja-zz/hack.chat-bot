@@ -13,7 +13,7 @@ import threading
 import time
 
 import cucco
-import libhackchat
+import hclib
 
 import utility
 from commands import arithmetic
@@ -102,7 +102,7 @@ class HackChatBot:
 
     def join(self, channel):
         """Joins <channel> (<str>)."""
-        connector = libhackchat.HackChat(
+        connector = hclib.HackChat(
             self._handle, self._config["name"], channel,
             self._config["password"], self._config["url"])
 
